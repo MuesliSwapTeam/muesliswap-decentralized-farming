@@ -1,90 +1,8 @@
-from onchain.util import *
 from opshin.std.math import *
-
-
-# DATUMS ##############################################################################################################
-@dataclass
-class StakingParams(PlutusData):
-    """
-    Non-updatable parameters of the staking contract
-    """
-
-    CONSTR_ID = 0
-    pool_auth_nft: Token
-    reward_token: Token  # TODO allow multiple reward tokens
-    stake_token: Token
-
-
-@dataclass
-class StakingState(PlutusData):
-    """
-    Tracks emission and stakes.
-    """
-
-    CONSTR_ID = 0
-    params: StakingParams
-    emission_rate: int  # in reward tokens per day
-    last_update_time: POSIXTime
-    amount_staked: int
-    cumulative_reward_per_token: int
-
-
-@dataclass
-class StakingPosition(PlutusData):
-    """
-    Datum for staking position UTxO's.
-    """
-
-    CONSTR_ID = 0
-    owner: Address
-    pool_id: TokenName
-    staked_since: POSIXTime
-    cumulative_pool_rpt_at_start: int
-
-
-# REDEEMERS ############################################################################################################
-@dataclass
-class ApplyOrders(PlutusData):
-    """
-    Redeemer for staking contract to apply batch of orders.
-    """
-
-    CONSTR_ID = 0
-    state_input_index: int
-    state_output_index: int
-    order_input_index: int  # TODO allow multiple orders
-    order_output_index: int  # TODO allow multiple orders
-    license_input_index: int
-    current_time: POSIXTime
-
-
-@dataclass
-class Unstake(PlutusData):
-    """
-    Redeemer for unstaking.
-    """
-
-    CONSTR_ID = 1
-    state_input_index: int
-    order_input_index: int
-    state_output_index: int
-    current_time: POSIXTime
-
-
-@dataclass
-class UpdateParams(PlutusData):
-    """
-    Redeemer for updating staking reward parameters.
-    """
-
-    CONSTR_ID = 2
-    state_input_index: int
-    tally_input_index: int
-    state_output_index: int
-    current_time: POSIXTime
-
-
-StakingRedeemer = Union[ApplyOrders, Unstake, UpdateParams]
+from onchain.util import *
+#from onchain.utils.ext_interval import *
+from onchain.staking_types import *
+from onchain.batching_types import *
 
 
 # HELPER FUNCTIONS #####################################################################################################
@@ -142,7 +60,7 @@ def validator(
 
     if isinstance(redeemer, ApplyOrders):
         order_input = resolve_linear_input(tx_info, redeemer.order_input_index, purpose)
-        order_datum = resolve_datum_unsafe(order_input, tx_info)
+        order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
         provided_amount = amount_of_token_in_output(
             previous_state.params.stake_token, order_input
         )
@@ -152,7 +70,7 @@ def validator(
         assert (
             stake_txout.address == previous_state_input.address
         ), "Referenced order output index does not send funds to staking address."
-        stake_datum = resolve_datum_unsafe(stake_txout, tx_info)
+        stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
         assert isinstance(
             stake_datum, StakingPosition
         ), "Invalid staking position datum."
@@ -203,4 +121,4 @@ def validator(
     )
     assert (
         desired_next_state == next_stake_state
-    ), "Gov state must not change except for the last_proposal_id"
+    ), "Staking state not updated correctly."

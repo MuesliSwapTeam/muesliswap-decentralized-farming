@@ -71,8 +71,11 @@ def ext_after_ext(a: ExtendedPOSIXTime, b: ExtendedPOSIXTime) -> bool:
 
 def range_is_short(a: POSIXTimeRange, max_length: int) -> bool:
     "Returns whether the range is at most max_length (in milliseconds)."
-    if not isinstance(a.upper_bound.limit, FinitePOSIXTime):
-        return False
-    if not isinstance(a.lower_bound.limit, FinitePOSIXTime):
-        return False
-    return a.upper_bound.limit - a.lower_bound.limit <= max_length
+    l = a.upper_bound.limit
+    u = a.upper_bound.limit
+    if isinstance(l, FinitePOSIXTime):
+        lf: FinitePOSIXTime = l
+        if isinstance(u, FinitePOSIXTime):
+            uf: FinitePOSIXTime = u
+            return uf.time - lf.time <= max_length
+    return False
