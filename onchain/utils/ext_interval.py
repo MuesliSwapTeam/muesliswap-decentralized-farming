@@ -57,8 +57,22 @@ def after_ext(a: POSIXTimeRange, b: ExtendedPOSIXTime) -> bool:
     )
 
 
+def contained_ext(a: POSIXTimeRange, b: ExtendedPOSIXTime) -> bool:
+    """Returns whether b is (not necessarily strictly) contained in a. |- b --a---|"""
+    return not before_ext(a, b) and not after_ext(a, b)
+
+
 def ext_after_ext(a: ExtendedPOSIXTime, b: ExtendedPOSIXTime) -> bool:
     """
     Check if a is after b, i.e b a
     """
     return compare_extended(a, b) == -1
+
+
+def range_is_short(a: POSIXTimeRange, max_length: int) -> bool:
+    "Returns whether the range is at most max_length (in milliseconds)."
+    if not isinstance(a.upper_bound.limit, FinitePOSIXTime):
+        return False
+    if not isinstance(a.lower_bound.limit, FinitePOSIXTime):
+        return False
+    return a.upper_bound.limit - a.lower_bound.limit <= max_length
