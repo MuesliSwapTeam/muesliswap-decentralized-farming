@@ -1,6 +1,5 @@
 from opshin.std.math import *
 from onchain.util import *
-#from onchain.utils.ext_interval import *
 from onchain.staking_types import *
 from onchain.batching_types import *
 
@@ -102,7 +101,7 @@ def validator(
     elif isinstance(redeemer, UpdateParams):
         desired_amount_staked = previous_state.amount_staked
         # TODO check that propor vote outcome is provided?
-        pass
+        assert False, "UpdateParams not implemented yet."
 
     else:
         assert False, "Invalid redeemer."
