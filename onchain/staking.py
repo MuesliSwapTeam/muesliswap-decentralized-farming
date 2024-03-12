@@ -7,7 +7,7 @@ from onchain.stake_state_types import *
 # VALIDATOR ############################################################################################################
 def validator(
     datum: StakingPosition,
-    redeemer: StakingRedeemer,
+    redeemer: UnstakingRedeemer,
     context: ScriptContext,
 ) -> None:
     purpose = get_spending_purpose(context)
@@ -29,7 +29,7 @@ def validator(
         tx_info, redeemer.order_input_index, purpose
     )
 
-    if isinstance(redeemer, Unstake):
+    if isinstance(redeemer, UnstakingRedeemer):
         assert user_signed_tx(datum.owner, tx_info), "Owner did not sign transaction."
 
         amount_of_token_in_output(stake_state.params.stake_token, stake_state_input)

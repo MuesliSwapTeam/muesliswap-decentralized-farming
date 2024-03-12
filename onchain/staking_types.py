@@ -17,7 +17,7 @@ class StakingPosition(PlutusData):
 
 # REDEEMERS ############################################################################################################
 @dataclass
-class Unstake(PlutusData):
+class UnstakingRedeemer(PlutusData):
     """
     Redeemer for unstaking.
     """
@@ -27,6 +27,3 @@ class Unstake(PlutusData):
     order_input_index: int
     state_output_index: int
     current_time: POSIXTime
-
-
-StakingRedeemer = Union[Unstake]
