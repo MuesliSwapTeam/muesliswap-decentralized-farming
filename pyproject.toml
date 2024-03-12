@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["MuesliSwapTeam <contact@muesliswap.com>"]
 readme = "README.md"
+packages = [{include = "muesliswap_onchain_staking"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.12"

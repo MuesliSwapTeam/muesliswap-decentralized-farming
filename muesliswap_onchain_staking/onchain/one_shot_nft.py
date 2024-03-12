@@ -5,7 +5,7 @@ NFT with a unique name that can only be minted once.
 from opshin.prelude import *
 from opshin.std.builtins import *
 
-from onchain.util import *
+from muesliswap_onchain_staking.onchain.util import *
 
 
 def one_shot_nft_name(spent_utxo: TxOutRef) -> TokenName:

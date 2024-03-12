@@ -7,7 +7,7 @@ from .utils import network, get_signing_info
 from .utils.contracts import get_contract, get_ref_utxo, module_name
 from .utils.network import context, show_tx
 
-from onchain import (
+from muesliswap_onchain_staking.onchain import (
     staking,
     batching,
 )

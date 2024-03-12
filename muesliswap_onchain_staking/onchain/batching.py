@@ -1,5 +1,5 @@
-from onchain.util import *
-from onchain.batching_types import *
+from muesliswap_onchain_staking.onchain.util import *
+from muesliswap_onchain_staking.onchain.batching_types import *
 
 
 # VALIDATOR ############################################################################################################

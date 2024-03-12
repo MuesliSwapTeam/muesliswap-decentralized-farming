@@ -3,9 +3,10 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from onchain import (
+from muesliswap_onchain_staking.onchain import (
     batching,
     staking,
+    stake_state
 )
 
 
@@ -51,7 +52,7 @@ def build_compressed(
 
 
 def main():
-    for script in [staking, batching]:
+    for script in [stake_state, staking, batching]:
         build_compressed("spending", script.__file__)
 
 

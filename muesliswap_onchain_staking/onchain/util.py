@@ -1,8 +1,8 @@
 from hashlib import sha256
 
 from opshin.prelude import *
-from onchain.utils.ext_interval import *
 from opshin.std.builtins import *
+from muesliswap_onchain_staking.onchain.utils.ext_interval import *
 
 
 def get_minting_purpose(context: ScriptContext) -> Minting:

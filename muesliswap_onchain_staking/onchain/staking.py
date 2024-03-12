@@ -1,7 +1,7 @@
 from opshin.std.math import *
-from onchain.util import *
-from onchain.staking_types import *
-from onchain.stake_state_types import *
+from muesliswap_onchain_staking.onchain.util import *
+from muesliswap_onchain_staking.onchain.staking_types import *
+from muesliswap_onchain_staking.onchain.stake_state_types import *
 
 
 # VALIDATOR ############################################################################################################
