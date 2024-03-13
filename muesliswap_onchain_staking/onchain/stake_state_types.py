@@ -40,7 +40,7 @@ class ApplyOrders(PlutusData):
     state_output_index: int
     order_input_index: int  # TODO allow multiple orders
     order_output_index: int  # TODO allow multiple orders
-    license_input_index: int
+    # license_input_index: int
     current_time: POSIXTime
 
 

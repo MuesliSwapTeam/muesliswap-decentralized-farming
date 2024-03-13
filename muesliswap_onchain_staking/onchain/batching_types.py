@@ -21,7 +21,7 @@ class ApplyOrder(PlutusData):
     """
 
     CONSTR_ID = 0
-    staking_state_input_index: int
+    stake_state_input_index: int
 
 
 @dataclass

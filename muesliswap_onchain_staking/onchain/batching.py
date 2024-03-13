@@ -14,7 +14,7 @@ def validator(
 
     if isinstance(redeemer, ApplyOrder):
         staking_input = resolve_linear_input(
-            tx_info, redeemer.staking_state_input_index, purpose
+            tx_info, redeemer.stake_state_input_index, purpose
         )
         staking_auth_nft = Token(staking_auth_nft_policy, datum.pool_id)
         assert token_present_in_output(
