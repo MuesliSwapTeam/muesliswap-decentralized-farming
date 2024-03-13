@@ -1,9 +1,8 @@
-from datetime import datetime
 import fire
 
-from muesliswap_onchain_staking.onchain import stake_state
+from muesliswap_onchain_staking.onchain import batching
 from muesliswap_onchain_staking.utils.network import show_tx, context
-from muesliswap_onchain_staking.utils import get_signing_info, network
+from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 from pycardano import (
     TransactionBuilder,
@@ -11,49 +10,53 @@ from pycardano import (
     AlonzoMetadata,
     Metadata,
     TransactionOutput,
+    Value,
 )
+from opshin.prelude import Token
 from util import (
     token_from_string,
+    asset_from_token,
     with_min_lovelace,
 )
 
 
 def main(
-    wallet: str = "creator",
-    stake_amonut: int = 42_000_000,
+    wallet: str = "staker",
+    stake_token: Token = token_from_string(
+        "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+    ),
+    stake_amount: int = 42,
+    pool_id: Token = token_from_string("abcd.abcd"),
 ):
-    _, _, stake_state_address = get_contract(
-        module_name(stake_state), False
+    _, _, stake_order_batching = get_contract(
+        module_name(batching), False
     )  # TODO: change to compressed
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
-    # construct the datum
-    stake_state_datum = stake_state.StakingState(
-        params=stake_state.StakingParams(
-            pool_auth_nft=token_from_string("abcd.abcd"),
-            reward_token=token_from_string("lovelace"),
-            stake_token=token_from_string("lovelace"),
-        ),
-        emission_rate=10,
-        last_update_time=int(datetime.now().timestamp() * 1000),
-        amount_staked=stake_amonut,
-        cumulative_reward_per_token=0,
+    # construct the stake order datum
+    stake_order_datum = batching.AddStakeOrder(
+        owner=to_address(payment_address),
+        pool_id=pool_id,
     )
 
     # build the transaction
     builder = TransactionBuilder(context)
     builder.auxiliary_data = AuxiliaryData(
-        data=AlonzoMetadata(metadata=Metadata({674: {"msg": ["Create Staking Pool"]}}))
+        data=AlonzoMetadata(
+            metadata=Metadata({674: {"msg": ["Create Add Stake Order"]}})
+        )
     )
     for u in payment_utxos:
         builder.add_input(u)
 
     # construct the output
     stake_state_output = TransactionOutput(
-        address=stake_state_address,
-        amount=stake_amonut,
-        datum=stake_state_datum,
+        address=stake_order_batching,
+        amount=Value(
+            multi_asset=asset_from_token(stake_token, stake_amount),
+        ),
+        datum=stake_order_datum,
     )
 
     builder.add_output(with_min_lovelace(stake_state_output, context))

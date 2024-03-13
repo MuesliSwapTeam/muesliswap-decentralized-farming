@@ -6,7 +6,8 @@ from typing import Union
 from muesliswap_onchain_staking.onchain import (
     batching,
     staking,
-    stake_state
+    stake_state,
+    free_mint
 )
 
 
@@ -54,6 +55,8 @@ def build_compressed(
 def main():
     for script in [stake_state, staking, batching]:
         build_compressed("spending", script.__file__)
+    for script in [free_mint]:
+        build_compressed("rewarding", script.__file__)
 
 
 if __name__ == "__main__":
