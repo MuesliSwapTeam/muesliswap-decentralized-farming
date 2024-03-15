@@ -9,16 +9,18 @@ def validator(
     redeemer: BatchingRedeemer,
     context: ScriptContext,
 ) -> None:
-    purpose = get_spending_purpose(context)
     tx_info = context.tx_info
 
     if isinstance(redeemer, ApplyOrder):
         stake_state_input = tx_info.inputs[redeemer.stake_state_input_index].resolved
         assert token_present_in_output(
             Token(stake_state_nft_policy, datum.pool_id), stake_state_input
-        ), "Staking NFT not present in referenced input."
+        ), "Stake State NFT not present in referenced input."
 
     elif isinstance(redeemer, CancelOrder):
         assert user_signed_tx(
             datum.owner, tx_info
         ), "Owner must sign cancel order transaction."
+
+    else:
+        assert False, "Invalid redeemer type."

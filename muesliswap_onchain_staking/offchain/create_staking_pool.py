@@ -16,11 +16,7 @@ from pycardano import (
     Value,
 )
 from opshin.prelude import Token
-from util import (
-    token_from_string,
-    with_min_lovelace,
-    asset_from_token
-)
+from util import token_from_string, with_min_lovelace, asset_from_token
 
 
 def main(
@@ -40,7 +36,9 @@ def main(
 
     # select UTxO to define the stake pool ID and generate expected stake_state_nft name
     unique_utxo = payment_utxos[0]
-    stake_state_nft_name = stake_state_nft.stake_state_nft_name(to_tx_out_ref(unique_utxo.input))
+    stake_state_nft_name = stake_state_nft.stake_state_nft_name(
+        to_tx_out_ref(unique_utxo.input)
+    )
     stake_state_nft_token = Token(
         policy_id=stake_state_nft_policy_id.payload,
         token_name=stake_state_nft_name,
@@ -74,7 +72,9 @@ def main(
     # construct the output
     stake_state_output = TransactionOutput(
         address=stake_state_address,
-        amount=Value(coin=2000000, multi_asset=asset_from_token(stake_state_nft_token, 1)),
+        amount=Value(
+            coin=2000000, multi_asset=asset_from_token(stake_state_nft_token, 1)
+        ),
         datum=stake_state_datum,
     )
 

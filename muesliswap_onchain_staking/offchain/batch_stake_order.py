@@ -38,6 +38,7 @@ def main(
     print("Stake state UTxOs:", stake_state_utxos)
     print("Batching UTxOs:", batching_utxos)
 
+    assert len(batching_utxos) == 1, "There should be exactly one batching UTxO."
     batching_input = batching_utxos[0]
     assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
     stake_state_input = stake_state_utxos[0]

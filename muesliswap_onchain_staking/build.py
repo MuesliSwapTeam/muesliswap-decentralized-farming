@@ -57,8 +57,6 @@ def build_compressed(
 
 
 def main():
-    build_compressed("spending", batching.__file__)
-
     build_compressed(
         "minting",
         stake_state_nft.__file__,
@@ -66,6 +64,16 @@ def main():
     )
     _, stake_state_nft_script_hash, _ = get_contract(
         module_name(stake_state_nft), compressed=False
+    )
+
+    build_compressed(
+        "spending",
+        batching.__file__,
+        args=[
+            plutus_cbor_dumps(
+                PlutusByteString(stake_state_nft_script_hash.payload)
+            ).hex()
+        ],
     )
 
     build_compressed(

@@ -74,7 +74,7 @@ def validator(
         stake_txout = outputs[redeemer.order_output_index]
         assert (
             stake_txout.address == staking_address
-        ), "Referenced order output does not send funds to staking address."
+        ), "Order output doesn't send funds to staking address."
         stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
         assert isinstance(
             stake_datum, StakingPosition
@@ -85,12 +85,12 @@ def validator(
             next_stake_state.cumulative_reward_per_token
             == stake_datum.cumulative_pool_rpt_at_start
         ), "Cumulative reward per token set incorrectly in staking position datum."
-#        assert contained_ext(
-#            tx_info.valid_range, stake_datum.staked_since
-#        ), "Invalid staking time."
-#        assert range_is_short(
-#            tx_info.valid_range, 5 * 60 * 1000
-#        ), "Validity range longer than threshold."
+        #        assert contained_ext(
+        #            tx_info.valid_range, stake_datum.staked_since
+        #        ), "Invalid staking time."
+        #        assert range_is_short(
+        #            tx_info.valid_range, 5 * 60 * 1000
+        #        ), "Validity range longer than threshold."
 
         staked_amount = amount_of_token_in_output(
             previous_state.params.stake_token, stake_txout
@@ -104,12 +104,14 @@ def validator(
         assert False, "Invalid redeemer."
 
     # TODO in any case, check that cumulative reward per token is updated correctly
-    next_cum_rpt = compute_updated_cumulative_reward_per_token(
-        previous_state.cumulative_reward_per_token,
-        previous_state.emission_rate,
-        previous_state.last_update_time,
-        current_time,
-    ),
+    next_cum_rpt = (
+        compute_updated_cumulative_reward_per_token(
+            previous_state.cumulative_reward_per_token,
+            previous_state.emission_rate,
+            previous_state.last_update_time,
+            current_time,
+        ),
+    )
 
     desired_next_state = StakingState(
         previous_state.params,
@@ -123,6 +125,8 @@ def validator(
             redeemer.current_time,
         ),
     )
+
+
 #    assert (
 #        desired_next_state == next_stake_state
 #    ), "Staking state not updated correctly."
