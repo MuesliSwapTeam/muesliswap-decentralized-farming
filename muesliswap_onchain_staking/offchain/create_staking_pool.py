@@ -12,6 +12,7 @@ from pycardano import (
     Metadata,
     TransactionOutput,
 )
+from opshin.prelude import Token
 from util import (
     token_from_string,
     with_min_lovelace,
@@ -20,7 +21,9 @@ from util import (
 
 def main(
     wallet: str = "creator",
-    stake_amonut: int = 42_000_000,
+    stake_token: Token = token_from_string(
+        "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+    ),
 ):
     _, _, stake_state_address = get_contract(
         module_name(stake_state), False
@@ -32,12 +35,12 @@ def main(
     stake_state_datum = stake_state.StakingState(
         params=stake_state.StakingParams(
             pool_auth_nft=token_from_string("abcd.abcd"),
-            reward_token=token_from_string("lovelace"),
-            stake_token=token_from_string("lovelace"),
+            reward_token=stake_token,
+            stake_token=stake_token,
         ),
         emission_rate=10,
-        last_update_time=int(datetime.now().timestamp() * 1000),
-        amount_staked=stake_amonut,
+        last_update_time=context.last_block_slot,
+        amount_staked=0,
         cumulative_reward_per_token=0,
     )
 
@@ -52,7 +55,7 @@ def main(
     # construct the output
     stake_state_output = TransactionOutput(
         address=stake_state_address,
-        amount=stake_amonut,
+        amount=0,
         datum=stake_state_datum,
     )
 

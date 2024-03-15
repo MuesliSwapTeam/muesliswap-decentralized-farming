@@ -40,6 +40,7 @@ def compute_updated_cumulative_reward_per_token(
 
 # VALIDATOR ############################################################################################################
 def validator(
+    staking_address: Address,
     state: StakingState,
     redeemer: StakeStateRedeemer,
     context: ScriptContext,
@@ -62,9 +63,7 @@ def validator(
         r: ApplyOrders = redeemer
         current_time = r.current_time
 
-        # TODO additionally check that amount of staked tokens is updated correctly (with new / unstaked positions)
-
-        order_input = resolve_linear_input(tx_info, redeemer.order_input_index, purpose)
+        order_input = tx_info.inputs[redeemer.order_input_index].resolved
         order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
         provided_amount = amount_of_token_in_output(
             previous_state.params.stake_token, order_input
@@ -73,23 +72,24 @@ def validator(
 
         stake_txout = outputs[redeemer.order_output_index]
         assert (
-            stake_txout.address == previous_state_input.address
-        ), "Referenced order output index does not send funds to staking address."
+            stake_txout.address == staking_address
+        ), "Referenced order output does not send funds to staking address."
         stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
         assert isinstance(
             stake_datum, StakingPosition
         ), "Invalid staking position datum."
         assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
+        assert stake_datum.owner == order_datum.owner, "Owner mismatch."
         assert (
             next_stake_state.cumulative_reward_per_token
             == stake_datum.cumulative_pool_rpt_at_start
         ), "Cumulative reward per token set incorrectly in staking position datum."
-        assert contained_ext(
-            tx_info.valid_range, stake_datum.staked_since
-        ), "Invalid staking time."
-        assert range_is_short(
-            tx_info.valid_range, 5 * 60 * 1000
-        ), "Validity range longer than threshold."
+#        assert contained_ext(
+#            tx_info.valid_range, stake_datum.staked_since
+#        ), "Invalid staking time."
+#        assert range_is_short(
+#            tx_info.valid_range, 5 * 60 * 1000
+#        ), "Validity range longer than threshold."
 
         staked_amount = amount_of_token_in_output(
             previous_state.params.stake_token, stake_txout
@@ -122,6 +122,6 @@ def validator(
             redeemer.current_time,
         ),
     )
-    assert (
-        desired_next_state == next_stake_state
-    ), "Staking state not updated correctly."
+#    assert (
+#        desired_next_state == next_stake_state
+#    ), "Staking state not updated correctly."

@@ -22,7 +22,7 @@ def validator(
         stake_state.params.pool_auth_nft, stake_state_input
     ), "Pool auth NFT not present in stake_state_input."
     assert (
-        datum.pool_id == stake_state.params.pool_auth_nft.token_name
+        datum.pool_id == stake_state.params.pool_auth_nft
     ), "Referenced wrong pool in stake_state_input."
 
     staking_position_input = resolve_linear_input(

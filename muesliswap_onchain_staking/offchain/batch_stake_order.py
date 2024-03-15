@@ -10,10 +10,10 @@ from pycardano import (
     AlonzoMetadata,
     Metadata,
     TransactionOutput,
-    Value,
+    Redeemer,
 )
-from opshin.prelude import Token
-from util import with_min_lovelace, sorted_utxos
+from opshin.prelude import FinitePOSIXTime, POSIXTime
+from util import with_min_lovelace, sorted_utxos, amount_of_token_in_value
 
 
 def main(
@@ -35,6 +35,9 @@ def main(
     batching_utxos = context.utxos(batching_address)
     stake_state_utxos = context.utxos(stake_state_address)
 
+    print("Stake state UTxOs:", stake_state_utxos)
+    print("Batching UTxOs:", batching_utxos)
+
     batching_input = batching_utxos[0]
     assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
     stake_state_input = stake_state_utxos[0]
@@ -46,16 +49,20 @@ def main(
         stake_state_input.output.datum.cbor
     )
 
-    important_inputs = sorted_utxos([batching_utxos[0], stake_state_utxos[0]])
-    order_input_index = important_inputs.index(batching_utxos[0])
-    stake_state_input_index = important_inputs.index(stake_state_utxos[0])
+    tx_inputs = sorted_utxos([batching_input, stake_state_input] + payment_utxos)
+    order_input_index = tx_inputs.index(batching_input)
+    stake_state_input_index = tx_inputs.index(stake_state_input)
     current_slot = context.last_block_slot
+
+    amount_to_stake = amount_of_token_in_value(
+        prev_stake_state_datum.params.stake_token, batching_input.output.amount
+    )
 
     # construct redeemers
     batching_apply_redeemer = batching.ApplyOrder(
         stake_state_input_index=stake_state_input_index
     )
-    stake_state_apply_redeemer = staking.ApplyOrders(
+    stake_state_apply_redeemer = stake_state.ApplyOrders(
         state_input_index=stake_state_input_index,
         state_output_index=0,
         order_input_index=order_input_index,
@@ -69,8 +76,7 @@ def main(
         params=prev_stake_state_datum.params,
         emission_rate=prev_stake_state_datum.emission_rate,
         last_update_time=current_slot,
-        amount_staked=prev_stake_state_datum.amount_staked
-        + add_stake_order_datum.stake_amount,
+        amount_staked=prev_stake_state_datum.amount_staked + amount_to_stake,
         cumulative_reward_per_token=prev_stake_state_datum.cumulative_reward_per_token,
     )
     staking_position_datum = staking.StakingPosition(
@@ -82,13 +88,13 @@ def main(
 
     # construct outputs
     stake_state_output = TransactionOutput(
-        address=to_address(stake_state_address),
-        amount=stake_state_input.amount,
+        address=stake_state_address,
+        amount=stake_state_input.output.amount,
         datum=stake_state_datum,
     )
     staking_position_output = TransactionOutput(
-        address=to_address(add_stake_order_datum.pool_id),
-        amount=batching_input.amount,
+        address=staking_address,
+        amount=batching_input.output.amount,
         datum=staking_position_datum,
     )
 
@@ -100,14 +106,17 @@ def main(
         )
     )
     # - add inputs
-    for u in important_inputs + payment_utxos:
+    for u in payment_utxos:
         builder.add_input(u)
     # - add script inputs
     builder.add_script_input(
-        stake_state_input, stake_state_script, None, stake_state_apply_redeemer
+        stake_state_input,
+        stake_state_script,
+        None,
+        Redeemer(stake_state_apply_redeemer),
     )
     builder.add_script_input(
-        batching_input, batching_script, None, batching_apply_redeemer
+        batching_input, batching_script, None, Redeemer(batching_apply_redeemer)
     )
     # - add outputs
     builder.add_output(with_min_lovelace(stake_state_output, context))

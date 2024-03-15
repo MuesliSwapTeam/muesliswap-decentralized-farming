@@ -3,12 +3,9 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from muesliswap_onchain_staking.onchain import (
-    batching,
-    staking,
-    stake_state,
-    free_mint
-)
+from muesliswap_onchain_staking.onchain import batching, staking, stake_state, free_mint
+from muesliswap_onchain_staking.utils.to_script_context import to_address
+from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 
 
 def build_compressed(
@@ -53,10 +50,15 @@ def build_compressed(
 
 
 def main():
-    for script in [stake_state, staking, batching]:
+    for script in [staking, batching]:
         build_compressed("spending", script.__file__)
-    for script in [free_mint]:
-        build_compressed("rewarding", script.__file__)
+    build_compressed("rewarding", free_mint.__file__)
+    _, _, staking_address = get_contract(module_name(staking), compressed=False)
+    build_compressed(
+        "spending",
+        stake_state.__file__,
+        args=[to_address(staking_address).to_cbor().hex()],
+    )
 
 
 if __name__ == "__main__":
