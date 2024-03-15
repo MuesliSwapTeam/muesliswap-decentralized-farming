@@ -9,7 +9,7 @@ class StakingParams(PlutusData):
     """
 
     CONSTR_ID = 0
-    pool_auth_nft: Token
+    pool_id: TokenName
     reward_token: Token  # TODO allow multiple reward tokens
     stake_token: Token
 

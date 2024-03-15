@@ -10,7 +10,7 @@ class StakingPosition(PlutusData):
 
     CONSTR_ID = 0
     owner: Address
-    pool_id: Token
+    pool_id: TokenName
     staked_since: POSIXTime
     cumulative_pool_rpt_at_start: int
 

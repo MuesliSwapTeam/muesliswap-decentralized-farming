@@ -4,16 +4,18 @@ from muesliswap_onchain_staking.onchain.batching_types import *
 
 # VALIDATOR ############################################################################################################
 def validator(
+    stake_state_nft_policy: PolicyId,
     datum: AddStakeOrder,
     redeemer: BatchingRedeemer,
     context: ScriptContext,
 ) -> None:
+    purpose = get_spending_purpose(context)
     tx_info = context.tx_info
 
     if isinstance(redeemer, ApplyOrder):
         stake_state_input = tx_info.inputs[redeemer.stake_state_input_index].resolved
         assert token_present_in_output(
-            datum.pool_id, stake_state_input
+            Token(stake_state_nft_policy, datum.pool_id), stake_state_input
         ), "Staking NFT not present in referenced input."
 
     elif isinstance(redeemer, CancelOrder):

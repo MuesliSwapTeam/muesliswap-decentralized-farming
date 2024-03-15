@@ -6,6 +6,7 @@ from muesliswap_onchain_staking.onchain.stake_state_types import *
 
 # VALIDATOR ############################################################################################################
 def validator(
+    stake_state_nft_policy: PolicyId,
     datum: StakingPosition,
     redeemer: UnstakingRedeemer,
     context: ScriptContext,
@@ -19,10 +20,10 @@ def validator(
     )
     stake_state: StakingState = resolve_datum_unsafe(stake_state_input, tx_info)
     assert token_present_in_output(
-        stake_state.params.pool_auth_nft, stake_state_input
+        Token(stake_state_nft_policy, datum.pool_id), stake_state_input
     ), "Pool auth NFT not present in stake_state_input."
     assert (
-        datum.pool_id == stake_state.params.pool_auth_nft
+        datum.pool_id == stake_state.params.pool_id
     ), "Referenced wrong pool in stake_state_input."
 
     staking_position_input = resolve_linear_input(

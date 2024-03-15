@@ -41,6 +41,7 @@ def compute_updated_cumulative_reward_per_token(
 # VALIDATOR ############################################################################################################
 def validator(
     staking_address: Address,
+    stake_state_nft_policy: PolicyId,
     state: StakingState,
     redeemer: StakeStateRedeemer,
     context: ScriptContext,

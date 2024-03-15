@@ -2,8 +2,15 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Union
+from uplc.ast import PlutusByteString, plutus_cbor_dumps
 
-from muesliswap_onchain_staking.onchain import batching, staking, stake_state, free_mint
+from muesliswap_onchain_staking.onchain import (
+    batching,
+    staking,
+    stake_state,
+    free_mint,
+    stake_state_nft,
+)
 from muesliswap_onchain_staking.utils.to_script_context import to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 
@@ -50,14 +57,39 @@ def build_compressed(
 
 
 def main():
-    for script in [staking, batching]:
-        build_compressed("spending", script.__file__)
+    build_compressed("spending", batching.__file__)
+
+    build_compressed(
+        "minting",
+        stake_state_nft.__file__,
+        args=[plutus_cbor_dumps(PlutusByteString(b"stake_state")).hex()],
+    )
+    _, stake_state_nft_script_hash, _ = get_contract(
+        module_name(stake_state_nft), compressed=False
+    )
+
+    build_compressed(
+        "spending",
+        staking.__file__,
+        args=[
+            plutus_cbor_dumps(
+                PlutusByteString(stake_state_nft_script_hash.payload)
+            ).hex()
+        ],
+    )
+
     build_compressed("rewarding", free_mint.__file__)
     _, _, staking_address = get_contract(module_name(staking), compressed=False)
+
     build_compressed(
         "spending",
         stake_state.__file__,
-        args=[to_address(staking_address).to_cbor().hex()],
+        args=[
+            to_address(staking_address).to_cbor().hex(),
+            plutus_cbor_dumps(
+                PlutusByteString(stake_state_nft_script_hash.payload)
+            ).hex(),
+        ],
     )
 
 

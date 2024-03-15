@@ -10,7 +10,7 @@ class AddStakeOrder(PlutusData):
 
     CONSTR_ID = 0
     owner: Address
-    pool_id: Token
+    pool_id: TokenName
 
 
 # REDEEMERS ############################################################################################################

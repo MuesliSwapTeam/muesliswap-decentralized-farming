@@ -12,7 +12,7 @@ from pycardano import (
     TransactionOutput,
     Value,
 )
-from opshin.prelude import Token
+from opshin.prelude import Token, TokenName
 from util import (
     token_from_string,
     asset_from_token,
@@ -26,10 +26,10 @@ def main(
         "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
     ),
     stake_amount: int = 42,
-    pool_id: Token = token_from_string("abcd.abcd"),
+    pool_id: TokenName = bytes.fromhex("abcd"),
 ):
     _, _, stake_order_batching = get_contract(
-        module_name(batching), False
+        module_name(batching), compressed=False
     )  # TODO: change to compressed
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
