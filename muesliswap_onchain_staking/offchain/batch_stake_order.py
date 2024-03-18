@@ -25,7 +25,7 @@ from util import with_min_lovelace, sorted_utxos, amount_of_token_in_value
 def adjust_for_wrong_fee(
     tx_signed: Transaction,
     signing_keys: List[Union[SigningKey, ExtendedSigningKey]],
-    fee_offset: int = 25_860,
+    fee_offset: int = 0,
 ) -> Transaction:
     new_value = pycardano.transaction.Value(
         coin=tx_signed.transaction_body.outputs[-1].amount.coin - fee_offset
@@ -101,18 +101,24 @@ def main(
     )
 
     # construct output datums
+    new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_reward_per_token(
+        prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
+        emission_rate=prev_stake_state_datum.emission_rate,
+        last_update_time=prev_stake_state_datum.last_update_time,
+        current_time=current_slot,
+    )
     stake_state_datum = stake_state.StakingState(
         params=prev_stake_state_datum.params,
         emission_rate=prev_stake_state_datum.emission_rate,
         last_update_time=current_slot,
         amount_staked=prev_stake_state_datum.amount_staked + amount_to_stake,
-        cumulative_reward_per_token=prev_stake_state_datum.cumulative_reward_per_token,
+        cumulative_reward_per_token=new_cumulative_pool_rpt,
     )
     staking_position_datum = staking.StakingPosition(
         owner=add_stake_order_datum.owner,
         pool_id=add_stake_order_datum.pool_id,
         staked_since=current_slot,
-        cumulative_pool_rpt_at_start=prev_stake_state_datum.cumulative_reward_per_token,
+        cumulative_pool_rpt_at_start=new_cumulative_pool_rpt,
     )
 
     # construct outputs
@@ -163,7 +169,7 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey]))
+    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=47410))
 
     show_tx(signed_tx)
 

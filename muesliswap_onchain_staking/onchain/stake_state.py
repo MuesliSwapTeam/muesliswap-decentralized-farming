@@ -103,16 +103,7 @@ def validator(
     else:
         assert False, "Invalid redeemer."
 
-    # TODO in any case, check that cumulative reward per token is updated correctly
-    next_cum_rpt = (
-        compute_updated_cumulative_reward_per_token(
-            previous_state.cumulative_reward_per_token,
-            previous_state.emission_rate,
-            previous_state.last_update_time,
-            current_time,
-        ),
-    )
-
+    # in any case, check that cumulative reward per token is updated correctly
     desired_next_state = StakingState(
         previous_state.params,
         previous_state.emission_rate,
@@ -126,7 +117,6 @@ def validator(
         ),
     )
 
-
-#    assert (
-#        desired_next_state == next_stake_state
-#    ), "Staking state not updated correctly."
+    assert (
+        desired_next_state == next_stake_state
+    ), "Staking state not updated correctly."
