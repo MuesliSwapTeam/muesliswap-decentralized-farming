@@ -24,6 +24,3 @@ class UnstakingRedeemer(PlutusData):
 
     CONSTR_ID = 1
     state_input_index: int
-    order_input_index: int
-    state_output_index: int
-    current_time: POSIXTime
