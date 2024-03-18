@@ -65,18 +65,25 @@ def validator(
     # ), "Validity range longer than threshold."
     # TODO check current time is appropriately set
 
+    new_cumulative_pool_rpt = compute_updated_cumulative_reward_per_token(
+        previous_state.cumulative_reward_per_token,
+        previous_state.emission_rate,
+        previous_state.last_update_time,
+        redeemer.current_time,
+    )
+
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
         current_time = r.current_time
 
-        order_input = tx_info.inputs[redeemer.order_input_index].resolved
+        order_input = tx_info.inputs[r.order_input_index].resolved
         order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
         provided_amount = amount_of_token_in_output(
             previous_state.params.stake_token, order_input
         )
         desired_amount_staked = previous_state.amount_staked + provided_amount
 
-        stake_txout = outputs[redeemer.order_output_index]
+        stake_txout = outputs[r.order_output_index]
         assert (
             stake_txout.address == staking_address
         ), "Order output doesn't send funds to staking address."
@@ -105,6 +112,41 @@ def validator(
         new_emission_rate = r.new_emission_rate
         desired_amount_staked = previous_state.amount_staked
 
+    elif isinstance(redeemer, Unstake):
+        r: Unstake = redeemer
+        current_time = r.current_time
+
+        staking_position_input = tx_info.inputs[r.staking_position_input_index].resolved
+        staking_position_datum: StakingPosition = resolve_datum_unsafe(
+            staking_position_input, tx_info
+        )
+        staked_amount = amount_of_token_in_output(
+            previous_state.params.stake_token, staking_position_input
+        )
+        desired_amount_staked = previous_state.amount_staked - staked_amount
+        assert (
+            desired_amount_staked >= 0
+        ), "Unstake would result in negative amount staked."
+
+        # check that owner receives the correct amount of reward tokens
+        payment_output = tx_info.outputs[r.payment_output_index]
+        unlock_amount = amount_of_token_in_output(
+            previous_state.params.stake_token, payment_output
+        )
+        assert (
+            unlock_amount == staked_amount
+        ), "Unlock amount doesn't match staked amount."
+        reward_amount = amount_of_token_in_output(
+            previous_state.params.reward_token, payment_output
+        )
+        expected_rewards = (
+            new_cumulative_pool_rpt
+            - staking_position_datum.cumulative_pool_rpt_at_start
+        ) * staked_amount
+        assert (
+            reward_amount <= expected_rewards
+        ), "Paid out amount is more than expected."
+
     else:
         assert False, "Invalid redeemer."
 
@@ -112,14 +154,9 @@ def validator(
     desired_next_state = StakingState(
         previous_state.params,
         new_emission_rate,
-        redeemer.current_time,
+        r.current_time,
         desired_amount_staked,
-        compute_updated_cumulative_reward_per_token(
-            previous_state.cumulative_reward_per_token,
-            previous_state.emission_rate,
-            previous_state.last_update_time,
-            redeemer.current_time,
-        ),
+        new_cumulative_pool_rpt,
     )
 
     assert (

@@ -57,4 +57,18 @@ class UpdateParams(PlutusData):
     current_time: POSIXTime
 
 
-StakeStateRedeemer = Union[ApplyOrders, UpdateParams]
+@dataclass
+class Unstake(PlutusData):
+    """
+    Redeemer for unstaking.
+    """
+
+    CONSTR_ID = 3
+    state_input_index: int
+    state_output_index: int
+    staking_position_input_index: int
+    payment_output_index: int
+    current_time: POSIXTime
+
+
+StakeStateRedeemer = Union[ApplyOrders, UpdateParams, Unstake]
