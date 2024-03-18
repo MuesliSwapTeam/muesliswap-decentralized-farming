@@ -15,7 +15,7 @@ def validator(
         stake_state_input = tx_info.inputs[redeemer.stake_state_input_index].resolved
         assert token_present_in_output(
             Token(stake_state_nft_policy, datum.pool_id), stake_state_input
-        ), "Stake State NFT not present in referenced input."
+        ), "Stake State NFT is not present in referenced input."
 
     elif isinstance(redeemer, CancelOrder):
         assert user_signed_tx(

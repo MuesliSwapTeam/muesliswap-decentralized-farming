@@ -4,6 +4,7 @@ from muesliswap_onchain_staking.onchain import batching, stake_state, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+import pycardano
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -11,9 +12,34 @@ from pycardano import (
     Metadata,
     TransactionOutput,
     Redeemer,
+    Transaction,
+    SigningKey,
+    ExtendedSigningKey,
+    VerificationKeyWitness,
 )
+from typing import List, Union
 from opshin.prelude import FinitePOSIXTime, POSIXTime
 from util import with_min_lovelace, sorted_utxos, amount_of_token_in_value
+
+
+def adjust_for_wrong_fee(
+    tx_signed: Transaction,
+    signing_keys: List[Union[SigningKey, ExtendedSigningKey]],
+    fee_offset: int = 25_860,
+) -> Transaction:
+    new_value = pycardano.transaction.Value(
+        coin=tx_signed.transaction_body.outputs[-1].amount.coin - fee_offset
+    )
+    tx_signed.transaction_body.outputs[-1].amount = new_value
+
+    witness_set = tx_signed.transaction_witness_set
+    witness_set.vkey_witnesses = []
+    for signing_key in set(signing_keys):
+        signature = signing_key.sign(tx_signed.transaction_body.hash())
+        witness_set.vkey_witnesses.append(
+            VerificationKeyWitness(signing_key.to_verification_key(), signature)
+        )
+    return Transaction(tx_signed.transaction_body, witness_set, auxiliary_data=tx_signed.auxiliary_data)
 
 
 def main(
@@ -60,16 +86,18 @@ def main(
     )
 
     # construct redeemers
-    batching_apply_redeemer = batching.ApplyOrder(
-        stake_state_input_index=stake_state_input_index
+    batching_apply_redeemer = Redeemer(
+        batching.ApplyOrder(stake_state_input_index=stake_state_input_index)
     )
-    stake_state_apply_redeemer = stake_state.ApplyOrders(
-        state_input_index=stake_state_input_index,
-        state_output_index=0,
-        order_input_index=order_input_index,
-        order_output_index=1,
-        # license_input_index=0,
-        current_time=current_slot,
+    stake_state_apply_redeemer = Redeemer(
+        stake_state.ApplyOrders(
+            state_input_index=stake_state_input_index,
+            state_output_index=0,
+            order_input_index=order_input_index,
+            order_output_index=1,
+            # license_input_index=0,
+            current_time=current_slot,
+        )
     )
 
     # construct output datums
@@ -106,6 +134,11 @@ def main(
             metadata=Metadata({674: {"msg": ["Batch Add Stake Order"]}})
         )
     )
+    # - add outputs
+    builder.add_output(with_min_lovelace(stake_state_output, context))
+    builder.add_output(with_min_lovelace(staking_position_output, context))
+    builder.add_output(TransactionOutput(address=payment_address, amount=2_000_000))
+    builder.ttl = context.last_block_slot + 100
     # - add inputs
     for u in payment_utxos:
         builder.add_input(u)
@@ -114,15 +147,14 @@ def main(
         stake_state_input,
         stake_state_script,
         None,
-        Redeemer(stake_state_apply_redeemer),
+        stake_state_apply_redeemer,
     )
     builder.add_script_input(
-        batching_input, batching_script, None, Redeemer(batching_apply_redeemer)
+        batching_input,
+        batching_script,
+        None,
+        batching_apply_redeemer,
     )
-    # - add outputs
-    builder.add_output(with_min_lovelace(stake_state_output, context))
-    builder.add_output(with_min_lovelace(staking_position_output, context))
-    builder.ttl = context.last_block_slot + 100
 
     # sign the transaction
     signed_tx = builder.build_and_sign(
@@ -131,7 +163,7 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(signed_tx)
+    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey]))
 
     show_tx(signed_tx)
 

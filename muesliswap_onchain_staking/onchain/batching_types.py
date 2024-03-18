@@ -20,7 +20,7 @@ class ApplyOrder(PlutusData):
     Redeemer for applying order from batching contract to staking.
     """
 
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     stake_state_input_index: int
 
 
@@ -30,7 +30,7 @@ class CancelOrder(PlutusData):
     Redeemer for unstaking.
     """
 
-    CONSTR_ID = 1
+    CONSTR_ID = 2
 
 
 BatchingRedeemer = Union[ApplyOrder, CancelOrder]

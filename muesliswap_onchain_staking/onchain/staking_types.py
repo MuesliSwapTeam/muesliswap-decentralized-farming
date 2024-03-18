@@ -22,7 +22,7 @@ class UnstakingRedeemer(PlutusData):
     Redeemer for unstaking.
     """
 
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     state_input_index: int
     order_input_index: int
     state_output_index: int

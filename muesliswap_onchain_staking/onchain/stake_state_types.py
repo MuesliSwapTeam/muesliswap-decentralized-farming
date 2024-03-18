@@ -35,7 +35,7 @@ class ApplyOrders(PlutusData):
     Redeemer for staking contract to apply batch of orders.
     """
 
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     state_input_index: int
     state_output_index: int
     order_input_index: int  # TODO allow multiple orders
@@ -50,7 +50,7 @@ class UpdateParams(PlutusData):
     Redeemer for updating staking reward parameters.
     """
 
-    CONSTR_ID = 1
+    CONSTR_ID = 2
     state_input_index: int
     tally_input_index: int
     state_output_index: int
