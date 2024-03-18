@@ -60,6 +60,11 @@ def validator(
     )
     next_stake_state = resolve_linear_output_state(next_state_output, tx_info)
 
+    # assert range_is_short(
+    #     tx_info.valid_range, 5 * 60 * 1000
+    # ), "Validity range longer than threshold."
+    # TODO check current time is appropriately set
+
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
         current_time = r.current_time
@@ -85,20 +90,20 @@ def validator(
             next_stake_state.cumulative_reward_per_token
             == stake_datum.cumulative_pool_rpt_at_start
         ), "Cumulative reward per token set incorrectly in staking position datum."
-        #        assert contained_ext(
-        #            tx_info.valid_range, stake_datum.staked_since
-        #        ), "Invalid staking time."
-        #        assert range_is_short(
-        #            tx_info.valid_range, 5 * 60 * 1000
-        #        ), "Validity range longer than threshold."
-
+        # assert contained_ext(
+        #     tx_info.valid_range, stake_datum.staked_since
+        # ), "Invalid staking time."
         staked_amount = amount_of_token_in_output(
             previous_state.params.stake_token, stake_txout
         )
         assert staked_amount == provided_amount, "Staked amount < provided amount."
+        new_emission_rate = previous_state.emission_rate
 
     elif isinstance(redeemer, UpdateParams):
-        assert False, "UpdateParams not implemented yet."
+        r: UpdateParams = redeemer
+        current_time = r.current_time
+        new_emission_rate = r.new_emission_rate
+        desired_amount_staked = previous_state.amount_staked
 
     else:
         assert False, "Invalid redeemer."
@@ -106,7 +111,7 @@ def validator(
     # in any case, check that cumulative reward per token is updated correctly
     desired_next_state = StakingState(
         previous_state.params,
-        previous_state.emission_rate,
+        new_emission_rate,
         redeemer.current_time,
         desired_amount_staked,
         compute_updated_cumulative_reward_per_token(

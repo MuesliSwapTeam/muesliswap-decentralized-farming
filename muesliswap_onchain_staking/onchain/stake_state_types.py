@@ -52,8 +52,8 @@ class UpdateParams(PlutusData):
 
     CONSTR_ID = 2
     state_input_index: int
-    tally_input_index: int
     state_output_index: int
+    new_emission_rate: int
     current_time: POSIXTime
 
 
