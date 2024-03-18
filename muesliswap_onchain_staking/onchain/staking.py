@@ -18,9 +18,7 @@ def validator(
     assert isinstance(redeemer, UnstakingRedeemer), "Invalid redeemer."
     r: UnstakingRedeemer = redeemer
 
-    stake_state_input = resolve_linear_input(
-        tx_info, r.state_input_index, purpose
-    )
+    stake_state_input = tx_info.inputs[r.state_input_index].resolved
     stake_state: StakingState = resolve_datum_unsafe(stake_state_input, tx_info)
     assert token_present_in_output(
         Token(stake_state_nft_policy, datum.pool_id), stake_state_input

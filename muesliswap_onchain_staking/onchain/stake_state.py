@@ -134,7 +134,8 @@ def validator(
             previous_state.params.stake_token, payment_output
         )
         assert (
-            unlock_amount == staked_amount
+            unlock_amount
+            >= staked_amount  # TODO change to "==" and allow case where stake_token == reward_token
         ), "Unlock amount doesn't match staked amount."
         reward_amount = amount_of_token_in_output(
             previous_state.params.reward_token, payment_output

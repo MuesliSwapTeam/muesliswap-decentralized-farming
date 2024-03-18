@@ -2,7 +2,7 @@ import fire
 
 from muesliswap_onchain_staking.onchain import batching, stake_state, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
-from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
+from muesliswap_onchain_staking.utils import get_signing_info, network, from_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 import pycardano
 from pycardano import (
@@ -131,7 +131,7 @@ def main(
     ) * unlock_amount
 
     unlock_payment_output = TransactionOutput(
-        address=staking_position_datum.owner,
+        address=from_address(staking_position_datum.owner),
         amount=Value(
             multi_asset=(
                 asset_from_token(
