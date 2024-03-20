@@ -11,9 +11,7 @@ def validator(
     redeemer: UnstakingRedeemer,
     context: ScriptContext,
 ) -> None:
-    purpose = get_spending_purpose(context)
     tx_info = context.tx_info
-    outputs = tx_info.outputs
 
     assert isinstance(redeemer, UnstakingRedeemer), "Invalid redeemer."
     r: UnstakingRedeemer = redeemer
@@ -23,10 +21,10 @@ def validator(
     assert token_present_in_output(
         Token(stake_state_nft_policy, datum.pool_id), stake_state_input
     ), "Pool auth NFT isn't present in stake_state_input."
-    # TODO check that pool auth NFT is also in output
-    
+
+    # TODO: check below redundant? (already in stake_state)
     assert (
         datum.pool_id == stake_state.params.pool_id
     ), "Referenced wrong pool in stake_state_input."
-    
+
     assert user_signed_tx(datum.owner, tx_info), "Owner did not sign transaction."

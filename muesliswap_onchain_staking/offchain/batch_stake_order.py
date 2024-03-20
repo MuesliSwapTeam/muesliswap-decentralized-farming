@@ -149,7 +149,9 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=133_610))
+    context.submit_tx(
+        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=133_610)
+    )
 
     show_tx(signed_tx)
 
