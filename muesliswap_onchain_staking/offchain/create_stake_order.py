@@ -25,7 +25,7 @@ def main(
     stake_token: Token = token_from_string(
         "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
     ),
-    stake_amount: int = 42,
+    stake_amount: int = 100,
 ):
     _, _, stake_order_batching = get_contract(
         module_name(batching), compressed=False

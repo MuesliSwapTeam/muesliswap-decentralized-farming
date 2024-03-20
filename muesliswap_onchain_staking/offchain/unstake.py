@@ -14,7 +14,6 @@ from pycardano import (
     Redeemer,
     Value,
 )
-from opshin.prelude import FinitePOSIXTime, POSIXTime
 from util import (
     with_min_lovelace,
     sorted_utxos,
@@ -132,7 +131,7 @@ def main(
                 amount=Value(
                     multi_asset=asset_from_token(
                         prev_stake_state_datum.params.reward_token,
-                        999_370 - reward_amount - unlock_amount,
+                        999_286 - reward_amount,
                     )
                 ),
             ),
