@@ -22,7 +22,7 @@ def validator(
     stake_state: StakingState = resolve_datum_unsafe(stake_state_input, tx_info)
     assert token_present_in_output(
         Token(stake_state_nft_policy, datum.pool_id), stake_state_input
-    ), "Pool auth NFT not present in stake_state_input."
+    ), "Pool auth NFT isn't present in stake_state_input."
     # TODO check that pool auth NFT is also in output
     
     assert (

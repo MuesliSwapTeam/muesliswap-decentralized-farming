@@ -71,6 +71,7 @@ def validator(
         previous_state.last_update_time,
         redeemer.current_time,
     )
+    new_emission_rate = previous_state.emission_rate
 
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
@@ -104,7 +105,6 @@ def validator(
             previous_state.params.stake_token, stake_txout
         )
         assert staked_amount == provided_amount, "Staked amount < provided amount."
-        new_emission_rate = previous_state.emission_rate
 
     elif isinstance(redeemer, UpdateParams):
         r: UpdateParams = redeemer
@@ -130,23 +130,17 @@ def validator(
 
         # check that owner receives the correct amount of reward tokens
         payment_output = tx_info.outputs[r.payment_output_index]
-        unlock_amount = amount_of_token_in_output(
-            previous_state.params.stake_token, payment_output
-        )
-        assert (
-            unlock_amount
-            >= staked_amount  # TODO change to "==" and allow case where stake_token == reward_token
-        ), "Unlock amount doesn't match staked amount."
-        reward_amount = amount_of_token_in_output(
-            previous_state.params.reward_token, payment_output
-        )
-        expected_rewards = (
+        expected_reward_amount = (
             new_cumulative_pool_rpt
             - staking_position_datum.cumulative_pool_rpt_at_start
         ) * staked_amount
-        assert (
-            reward_amount <= expected_rewards
-        ), "Paid out amount is more than expected."
+        expected_reward_value = value_from_token(
+            previous_state.params.reward_token, expected_reward_amount
+        )
+        check_greater_or_equal_value(
+            add_value(staking_position_input.value, expected_reward_value),
+            payment_output.value,
+        )
 
     else:
         assert False, "Invalid redeemer."

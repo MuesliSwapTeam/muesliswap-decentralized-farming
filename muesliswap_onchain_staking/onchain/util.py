@@ -4,6 +4,9 @@ from opshin.prelude import *
 from opshin.std.builtins import *
 from muesliswap_onchain_staking.onchain.utils.ext_interval import *
 
+EMTPY_TOKENNAME_DICT: Dict[bytes, int] = {}
+EMPTY_VALUE_DICT: Value = {}
+
 
 def get_minting_purpose(context: ScriptContext) -> Minting:
     purpose = context.purpose
@@ -152,3 +155,103 @@ def list_index(listy: List[int], key: int) -> int:
         index += 1
     assert False, f"Key {key} not in list {listy}"
     return -1
+
+
+def merge_without_duplicates(a: List[bytes], b: List[bytes]) -> List[bytes]:
+    """
+    Merge two lists without duplicates
+    Note: The cost of this is O(n^2), can we assume that the lists are small?
+    Rough estimate allows 1000 bytes / 32 bytes per policy id ~ 31 policy ids
+    However for token names no lower bound on the length is given, so we assume 1000 bytes / 1 byte per token name ~ 1000 token names
+    """
+    return [x for x in a if not x in b] + b
+
+
+def _subtract_token_names(
+    a: Dict[TokenName, int], b: Dict[TokenName, int]
+) -> Dict[TokenName, int]:
+    """
+    Subtract b from a, return a - b
+    """
+    if not b:
+        return a
+    elif not a:
+        return {tn_amount[0]: -tn_amount[1] for tn_amount in b.items()}
+    return {
+        tn: a.get(tn, 0) - b.get(tn, 0)
+        for tn in merge_without_duplicates(a.keys(), b.keys())
+    }
+
+
+def subtract_value(a: Value, b: Value) -> Value:
+    """
+    Subtract b from a, return a - b
+    """
+    if not b:
+        return a
+    elif not a:
+        return {
+            pid_tokens[0]: {
+                tn_amount[0]: -tn_amount[1] for tn_amount in pid_tokens[1].items()
+            }
+            for pid_tokens in b.items()
+        }
+    return {
+        pid: _subtract_token_names(
+            a.get(pid, EMTPY_TOKENNAME_DICT), b.get(pid, EMTPY_TOKENNAME_DICT)
+        )
+        for pid in merge_without_duplicates(a.keys(), b.keys())
+    }
+
+
+def _add_token_names(
+    a: Dict[TokenName, int], b: Dict[TokenName, int]
+) -> Dict[TokenName, int]:
+    """
+    Add b to a, return a + b
+    """
+    if not a:
+        return b
+    if not b:
+        return a
+    return {
+        tn: a.get(tn, 0) + b.get(tn, 0)
+        for tn in merge_without_duplicates(a.keys(), b.keys())
+    }
+
+
+def add_value(a: Value, b: Value) -> Value:
+    """
+    Add b to a, return a + b
+    """
+    if not a:
+        return b
+    if not b:
+        return a
+    return {
+        pid: _add_token_names(
+            a.get(pid, EMTPY_TOKENNAME_DICT), b.get(pid, EMTPY_TOKENNAME_DICT)
+        )
+        for pid in merge_without_duplicates(a.keys(), b.keys())
+    }
+
+
+def total_value(value_store_inputs: List[TxOut]) -> Value:
+    """
+    Calculate the total value of all inputs
+    """
+    total_value = EMPTY_VALUE_DICT
+    for txo in value_store_inputs:
+        total_value = add_value(total_value, txo.value)
+    return total_value
+
+
+def amount_of_token_in_value(
+    token: Token,
+    value: Value,
+) -> int:
+    return value.get(token.policy_id, {b"": 0}).get(token.token_name, 0)
+
+
+def value_from_token(token: Token, amount: int) -> Value:
+    return {token.policy_id: {token.token_name: amount}}

@@ -126,20 +126,15 @@ def main(
     )
 
     reward_amount = (
-        new_cumulative_pool_rpt
-        - staking_position_datum.cumulative_pool_rpt_at_start
+        new_cumulative_pool_rpt - staking_position_datum.cumulative_pool_rpt_at_start
     ) * unlock_amount
 
     unlock_payment_output = TransactionOutput(
         address=from_address(staking_position_datum.owner),
-        amount=Value(
-            multi_asset=(
-                asset_from_token(
-                    prev_stake_state_datum.params.stake_token, unlock_amount
-                )
-                + asset_from_token(
-                    prev_stake_state_datum.params.reward_token, reward_amount
-                )
+        amount=staking_input.output.amount
+        + Value(
+            multi_asset=asset_from_token(
+                prev_stake_state_datum.params.reward_token, reward_amount
             )
         ),
     )
@@ -152,8 +147,22 @@ def main(
         )
     )
     # - add outputs
-    builder.add_output(with_min_lovelace(stake_state_output, context))
-    builder.add_output(with_min_lovelace(unlock_payment_output, context))
+    builder.add_output(stake_state_output)
+    builder.add_output(unlock_payment_output)
+    builder.add_output(
+        with_min_lovelace(
+            TransactionOutput(
+                address=payment_address,
+                amount=Value(
+                    multi_asset=asset_from_token(
+                        prev_stake_state_datum.params.reward_token,
+                        999_370 - reward_amount - unlock_amount,
+                    )
+                ),
+            ),
+            context,
+        )
+    )
     builder.ttl = context.last_block_slot + 100
     # - add inputs
     for u in payment_utxos:
@@ -179,7 +188,7 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=47410))
+    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=0))
 
     show_tx(signed_tx)
 
