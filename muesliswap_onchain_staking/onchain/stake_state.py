@@ -36,8 +36,7 @@ def compute_updated_cumulative_reward_per_token(
     Compute the updated cumulative reward per token.
     """
     time_diff = current_time - last_update_time
-    # TODO divide by 24*60*60*1000 and round to get the emission rate per day
-    return prev_cum_rpt + (emission_rate * time_diff)
+    return prev_cum_rpt + (emission_rate * time_diff) // (24 * 60 * 60 * 1000)
 
 
 # VALIDATOR ############################################################################################################
