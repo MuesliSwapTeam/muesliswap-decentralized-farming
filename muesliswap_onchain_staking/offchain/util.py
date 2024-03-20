@@ -1,15 +1,18 @@
-from typing import List
+from typing import List, Union
 
 import pycardano
 
 from opshin.prelude import Token
-from pycardano import MultiAsset, ScriptHash, Asset, AssetName, Value
-
-GOV_STATE_NFT_TK_NAME = (
-    "bc0a47f8459162152c33913f9d4e50d2340459ce4b6197761967d64368e0e50c"
-)
-TREASURER_STATE_NFT_TK_NAME = (
-    "f0cb6462eb8a44c239c382506c38291413dd9a96c18bc0d079ea9b4d950d9f16"
+from pycardano import (
+    MultiAsset,
+    ScriptHash,
+    Asset,
+    AssetName,
+    Value,
+    Transaction,
+    VerificationKeyWitness,
+    SigningKey,
+    ExtendedSigningKey,
 )
 
 
@@ -50,4 +53,26 @@ def amount_of_token_in_value(
 ) -> int:
     return value.multi_asset.get(ScriptHash(token.policy_id), {}).get(
         AssetName(token.token_name), 0
+    )
+
+
+def adjust_for_wrong_fee(
+    tx_signed: Transaction,
+    signing_keys: List[Union[SigningKey, ExtendedSigningKey]],
+    fee_offset: int = 0,
+) -> Transaction:
+    new_value = pycardano.transaction.Value(
+        coin=tx_signed.transaction_body.outputs[-1].amount.coin - fee_offset
+    )
+    tx_signed.transaction_body.outputs[-1].amount = new_value
+
+    witness_set = tx_signed.transaction_witness_set
+    witness_set.vkey_witnesses = []
+    for signing_key in set(signing_keys):
+        signature = signing_key.sign(tx_signed.transaction_body.hash())
+        witness_set.vkey_witnesses.append(
+            VerificationKeyWitness(signing_key.to_verification_key(), signature)
+        )
+    return Transaction(
+        tx_signed.transaction_body, witness_set, auxiliary_data=tx_signed.auxiliary_data
     )

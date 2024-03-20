@@ -4,7 +4,6 @@ from muesliswap_onchain_staking.onchain import batching, stake_state, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
-import pycardano
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -12,34 +11,9 @@ from pycardano import (
     Metadata,
     TransactionOutput,
     Redeemer,
-    Transaction,
-    SigningKey,
-    ExtendedSigningKey,
-    VerificationKeyWitness,
 )
-from typing import List, Union
 from opshin.prelude import FinitePOSIXTime, POSIXTime
-from util import with_min_lovelace, sorted_utxos, amount_of_token_in_value
-
-
-def adjust_for_wrong_fee(
-    tx_signed: Transaction,
-    signing_keys: List[Union[SigningKey, ExtendedSigningKey]],
-    fee_offset: int = 0,
-) -> Transaction:
-    new_value = pycardano.transaction.Value(
-        coin=tx_signed.transaction_body.outputs[-1].amount.coin - fee_offset
-    )
-    tx_signed.transaction_body.outputs[-1].amount = new_value
-
-    witness_set = tx_signed.transaction_witness_set
-    witness_set.vkey_witnesses = []
-    for signing_key in set(signing_keys):
-        signature = signing_key.sign(tx_signed.transaction_body.hash())
-        witness_set.vkey_witnesses.append(
-            VerificationKeyWitness(signing_key.to_verification_key(), signature)
-        )
-    return Transaction(tx_signed.transaction_body, witness_set, auxiliary_data=tx_signed.auxiliary_data)
+from util import with_min_lovelace, sorted_utxos, adjust_for_wrong_fee
 
 
 def main(
