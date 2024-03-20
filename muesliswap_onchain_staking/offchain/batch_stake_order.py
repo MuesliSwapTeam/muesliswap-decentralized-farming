@@ -84,6 +84,7 @@ def main(
     new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_reward_per_token(
         prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
         emission_rate=prev_stake_state_datum.emission_rate,
+        amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )

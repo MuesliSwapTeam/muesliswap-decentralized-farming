@@ -29,6 +29,7 @@ def resolve_linear_output_state(
 def compute_updated_cumulative_reward_per_token(
     prev_cum_rpt: int,
     emission_rate: int,
+    amount_staked: int,
     last_update_time: POSIXTime,
     current_time: POSIXTime,
 ) -> int:
@@ -36,7 +37,9 @@ def compute_updated_cumulative_reward_per_token(
     Compute the updated cumulative reward per token.
     """
     time_diff = current_time - last_update_time
-    return prev_cum_rpt + (emission_rate * time_diff) // (24 * 60 * 60 * 1000)
+    return prev_cum_rpt + (
+        0 if amount_staked == 0 else ((emission_rate * time_diff) // amount_staked)
+    )
 
 
 # VALIDATOR ############################################################################################################
@@ -69,6 +72,7 @@ def validator(
     new_cumulative_pool_rpt = compute_updated_cumulative_reward_per_token(
         previous_state.cumulative_reward_per_token,
         previous_state.emission_rate,
+        previous_state.amount_staked,
         previous_state.last_update_time,
         redeemer.current_time,
     )
@@ -136,9 +140,12 @@ def validator(
         # check that owner receives the correct amount of reward tokens
         payment_output = tx_info.outputs[r.payment_output_index]
         expected_reward_amount = (
-            new_cumulative_pool_rpt
-            - staking_position_datum.cumulative_pool_rpt_at_start
-        ) * staked_amount
+            (
+                new_cumulative_pool_rpt
+                - staking_position_datum.cumulative_pool_rpt_at_start
+            )
+            * staked_amount
+        ) // (24 * 60 * 60 * 1000)
         expected_reward_value = value_from_token(
             previous_state.params.reward_token, expected_reward_amount
         )

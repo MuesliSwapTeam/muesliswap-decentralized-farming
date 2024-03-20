@@ -24,6 +24,7 @@ def main(
     stake_token: Token = token_from_string(
         "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
     ),
+    emission_rate: int = 42_000,
 ):
     _, _, stake_state_address = get_contract(
         module_name(stake_state), compressed=False
@@ -54,8 +55,8 @@ def main(
             reward_token=stake_token,
             stake_token=stake_token,
         ),
-        emission_rate=10,
-        last_update_time=context.last_block_slot,
+        emission_rate=emission_rate,
+        last_update_time=int(datetime.now().timestamp() * 1000),
         amount_staked=0,
         cumulative_reward_per_token=0,
     )

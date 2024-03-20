@@ -81,6 +81,7 @@ def main(
     new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_reward_per_token(
         prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
         emission_rate=prev_stake_state_datum.emission_rate,
+        amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
@@ -100,8 +101,9 @@ def main(
     )
 
     reward_amount = (
-        new_cumulative_pool_rpt - staking_position_datum.cumulative_pool_rpt_at_start
-    ) * unlock_amount
+        (new_cumulative_pool_rpt - staking_position_datum.cumulative_pool_rpt_at_start)
+        * unlock_amount
+    ) // (24 * 60 * 60 * 1000)
 
     unlock_payment_output = TransactionOutput(
         address=from_address(staking_position_datum.owner),
