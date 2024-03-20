@@ -4,6 +4,8 @@ from muesliswap_onchain_staking.onchain.stake_state_types import *
 from muesliswap_onchain_staking.onchain.staking_types import *
 from muesliswap_onchain_staking.onchain.batching_types import *
 
+MAX_VALIDITY_RANGE = 3 * 60 * 1000  # 3 minutes
+
 
 # HELPER FUNCTIONS #####################################################################################################
 def resolve_linear_input_state(datum: StakingState) -> StakingState:
@@ -59,11 +61,11 @@ def validator(
         previous_state_input, tx_info, redeemer.state_output_index
     )
     next_stake_state = resolve_linear_output_state(next_state_output, tx_info)
+    check_preserves_value(previous_state_input, next_state_output)
 
-    # assert range_is_short(
-    #     tx_info.valid_range, 5 * 60 * 1000
-    # ), "Validity range longer than threshold."
-    # TODO check current time is appropriately set
+    assert range_is_short(
+        tx_info.valid_range, MAX_VALIDITY_RANGE
+    ), "Validity range longer than threshold."
 
     new_cumulative_pool_rpt = compute_updated_cumulative_reward_per_token(
         previous_state.cumulative_reward_per_token,
@@ -75,7 +77,6 @@ def validator(
 
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
-        current_time = r.current_time
 
         order_input = tx_info.inputs[r.order_input_index].resolved
         order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
@@ -92,15 +93,22 @@ def validator(
         assert isinstance(
             stake_datum, StakingPosition
         ), "Invalid staking position datum."
+        assert (
+            amount_of_token_in_output(
+                Token(stake_state_nft_policy, stake_datum.pool_id),
+                previous_state_input,
+            )
+            == 1
+        ), "Correct Pool auth NFT is not present."
         assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
         assert stake_datum.owner == order_datum.owner, "Owner mismatch."
         assert (
             next_stake_state.cumulative_reward_per_token
             == stake_datum.cumulative_pool_rpt_at_start
         ), "Cumulative reward per token set incorrectly in staking position datum."
-        # assert contained_ext(
-        #     tx_info.valid_range, stake_datum.staked_since
-        # ), "Invalid staking time."
+        assert contained(
+            tx_info.valid_range, stake_datum.staked_since
+        ), "Invalid staking time."
         staked_amount = amount_of_token_in_output(
             previous_state.params.stake_token, stake_txout
         )
@@ -108,13 +116,11 @@ def validator(
 
     elif isinstance(redeemer, UpdateParams):
         r: UpdateParams = redeemer
-        current_time = r.current_time
         new_emission_rate = r.new_emission_rate
         desired_amount_staked = previous_state.amount_staked
 
     elif isinstance(redeemer, Unstake):
         r: Unstake = redeemer
-        current_time = r.current_time
 
         staking_position_input = tx_info.inputs[r.staking_position_input_index].resolved
         staking_position_datum: StakingPosition = resolve_datum_unsafe(
@@ -153,7 +159,12 @@ def validator(
         desired_amount_staked,
         new_cumulative_pool_rpt,
     )
-
     assert (
         desired_next_state == next_stake_state
     ), "Staking state not updated correctly."
+    assert (
+        previous_state.last_update_time < r.current_time
+    ), "Invalid current time (w.r.t. last update time)."
+    assert contained(
+        tx_info.valid_range, r.current_time
+    ), "Invalid current time in redeemer."

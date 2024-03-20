@@ -1,8 +1,9 @@
 import fire
+from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import batching, stake_state, staking
+from muesliswap_onchain_staking.onchain import stake_state
 from muesliswap_onchain_staking.utils.network import show_tx, context
-from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
+from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 from pycardano import (
     TransactionBuilder,
@@ -36,7 +37,7 @@ def main(
 
     tx_inputs = sorted_utxos([stake_state_input] + payment_utxos)
     stake_state_input_index = tx_inputs.index(stake_state_input)
-    current_slot = context.last_block_slot
+    current_time = int(datetime.now().timestamp() * 1000)
 
     # construct redeemers
     stake_state_apply_redeemer = Redeemer(
@@ -44,7 +45,7 @@ def main(
             state_input_index=stake_state_input_index,
             state_output_index=0,
             new_emission_rate=new_emission_rate,
-            current_time=current_slot,
+            current_time=current_time,
         )
     )
 
@@ -53,12 +54,12 @@ def main(
         prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
         emission_rate=prev_stake_state_datum.emission_rate,
         last_update_time=prev_stake_state_datum.last_update_time,
-        current_time=current_slot,
+        current_time=current_time,
     )
     stake_state_datum = stake_state.StakingState(
         params=prev_stake_state_datum.params,
         emission_rate=new_emission_rate,
-        last_update_time=current_slot,
+        last_update_time=current_time,
         amount_staked=prev_stake_state_datum.amount_staked,
         cumulative_reward_per_token=new_cumulative_pool_rpt,
     )
@@ -79,6 +80,7 @@ def main(
     )
     # - add outputs
     builder.add_output(with_min_lovelace(stake_state_output, context))
+    builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
     for u in payment_utxos:

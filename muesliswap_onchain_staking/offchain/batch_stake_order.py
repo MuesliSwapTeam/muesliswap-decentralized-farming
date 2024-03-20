@@ -1,4 +1,5 @@
 import fire
+from datetime import datetime
 
 from muesliswap_onchain_staking.onchain import batching, stake_state, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
@@ -58,7 +59,7 @@ def main(
     tx_inputs = sorted_utxos([batching_input, stake_state_input] + payment_utxos)
     order_input_index = tx_inputs.index(batching_input)
     stake_state_input_index = tx_inputs.index(stake_state_input)
-    current_slot = context.last_block_slot
+    current_time = int(datetime.now().timestamp() * 1000)
 
     amount_to_stake = amount_of_token_in_value(
         prev_stake_state_datum.params.stake_token, batching_input.output.amount
@@ -75,7 +76,7 @@ def main(
             order_input_index=order_input_index,
             order_output_index=1,
             # license_input_index=0,
-            current_time=current_slot,
+            current_time=current_time,
         )
     )
 
@@ -84,19 +85,19 @@ def main(
         prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
         emission_rate=prev_stake_state_datum.emission_rate,
         last_update_time=prev_stake_state_datum.last_update_time,
-        current_time=current_slot,
+        current_time=current_time,
     )
     stake_state_datum = stake_state.StakingState(
         params=prev_stake_state_datum.params,
         emission_rate=prev_stake_state_datum.emission_rate,
-        last_update_time=current_slot,
+        last_update_time=current_time,
         amount_staked=prev_stake_state_datum.amount_staked + amount_to_stake,
         cumulative_reward_per_token=new_cumulative_pool_rpt,
     )
     staking_position_datum = staking.StakingPosition(
         owner=add_stake_order_datum.owner,
         pool_id=add_stake_order_datum.pool_id,
-        staked_since=current_slot,
+        staked_since=current_time,
         cumulative_pool_rpt_at_start=new_cumulative_pool_rpt,
     )
 
@@ -122,6 +123,7 @@ def main(
     # - add outputs
     builder.add_output(with_min_lovelace(stake_state_output, context))
     builder.add_output(with_min_lovelace(staking_position_output, context))
+    builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
     for u in payment_utxos:
@@ -147,7 +149,7 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=47410))
+    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=133_610))
 
     show_tx(signed_tx)
 
