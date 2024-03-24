@@ -26,20 +26,27 @@ def resolve_linear_output_state(
     return next_state
 
 
-def compute_updated_cumulative_reward_per_token(
-    prev_cum_rpt: int,
-    emission_rate: int,
+def compute_updated_cumulative_rewards_per_token(
+    prev_cum_rpts: List[int],
+    emission_rates: List[int],
     amount_staked: int,
     last_update_time: POSIXTime,
     current_time: POSIXTime,
-) -> int:
+) -> List[int]:
     """
     Compute the updated cumulative reward per token.
     """
-    time_diff = current_time - last_update_time
-    return prev_cum_rpt + (
-        0 if amount_staked == 0 else ((emission_rate * time_diff) // amount_staked)
-    )
+    return [
+        prev_cum_rpts[i]
+        + (
+            0
+            if amount_staked == 0
+            else (
+                (emission_rates[i] * (current_time - last_update_time)) // amount_staked
+            )
+        )
+        for i in range(len(emission_rates))
+    ]
 
 
 # VALIDATOR ############################################################################################################
@@ -69,14 +76,14 @@ def validator(
         tx_info.valid_range, MAX_VALIDITY_RANGE
     ), "Validity range longer than threshold."
 
-    new_cumulative_pool_rpt = compute_updated_cumulative_reward_per_token(
-        previous_state.cumulative_reward_per_token,
-        previous_state.emission_rate,
+    new_cumulative_pool_rpts = compute_updated_cumulative_rewards_per_token(
+        previous_state.cumulative_rewards_per_token,
+        previous_state.emission_rates,
         previous_state.amount_staked,
         previous_state.last_update_time,
         redeemer.current_time,
     )
-    new_emission_rate = previous_state.emission_rate
+    new_emission_rates = previous_state.emission_rates
 
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
@@ -105,9 +112,9 @@ def validator(
         ), "Correct Pool auth NFT is not present."
         assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
         assert stake_datum.owner == order_datum.owner, "Owner mismatch."
-        assert (
-            next_stake_state.cumulative_reward_per_token
-            == stake_datum.cumulative_pool_rpt_at_start
+        assert lists_equal(
+            next_stake_state.cumulative_rewards_per_token,
+            stake_datum.cumulative_pool_rpts_at_start,
         ), "Cumulative reward per token set incorrectly in staking position datum."
         assert contained(
             tx_info.valid_range, stake_datum.staked_since
@@ -119,7 +126,9 @@ def validator(
 
     elif isinstance(redeemer, UpdateParams):
         r: UpdateParams = redeemer
-        new_emission_rate = r.new_emission_rate
+        for rt in r.new_emission_rates:
+            assert rt >= 0, "Negative emission rate."
+        new_emission_rates = r.new_emission_rates
         desired_amount_staked = previous_state.amount_staked
 
     elif isinstance(redeemer, Unstake):
@@ -139,15 +148,24 @@ def validator(
 
         # check that owner receives the correct amount of reward tokens
         payment_output = tx_info.outputs[r.payment_output_index]
-        expected_reward_amount = (
+        expected_reward_amounts = [
             (
-                new_cumulative_pool_rpt
-                - staking_position_datum.cumulative_pool_rpt_at_start
+                (
+                    new_cumulative_pool_rpts[i]
+                    - staking_position_datum.cumulative_pool_rpts_at_start[i]
+                )
+                * staked_amount
             )
-            * staked_amount
-        ) // (24 * 60 * 60 * 1000)
-        expected_reward_value = value_from_token(
-            previous_state.params.reward_token, expected_reward_amount
+            // (24 * 60 * 60 * 1000)
+            for i in range(len(previous_state.params.reward_tokens))
+        ]
+        expected_reward_value = sum_values(
+            [
+                value_from_token(
+                    previous_state.params.reward_tokens[i], expected_reward_amounts[i]
+                )
+                for i in range(len(previous_state.params.reward_tokens))
+            ]
         )
         check_greater_or_equal_value(
             add_value(staking_position_input.value, expected_reward_value),
@@ -160,10 +178,10 @@ def validator(
     # in any case, check that cumulative reward per token is updated correctly
     desired_next_state = StakingState(
         previous_state.params,
-        new_emission_rate,
+        new_emission_rates,
         r.current_time,
         desired_amount_staked,
-        new_cumulative_pool_rpt,
+        new_cumulative_pool_rpts,
     )
     assert (
         desired_next_state == next_stake_state

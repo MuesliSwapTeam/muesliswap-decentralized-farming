@@ -144,6 +144,13 @@ def check_output_reasonably_sized(output: TxOut, attached_datum: Anything) -> No
     assert len(serialise_data(attached_datum)) <= 1000, "Attached datum too large"
 
 
+def lists_equal(a: List[int], b: List[int]) -> bool:
+    """
+    Check if two lists are equal
+    """
+    return len(a) == len(b) and all([a[i] == b[i] for i in range(len(a))])
+
+
 def list_index(listy: List[int], key: int) -> int:
     """
     Get the index of the first occurence of key in listy
@@ -234,6 +241,16 @@ def add_value(a: Value, b: Value) -> Value:
         )
         for pid in merge_without_duplicates(a.keys(), b.keys())
     }
+
+
+def sum_values(values: List[Value]) -> Value:
+    """
+    Sum up all values in the list
+    """
+    total_value = EMPTY_VALUE_DICT
+    for v in values:
+        total_value = add_value(total_value, v)
+    return total_value
 
 
 def total_value(value_store_inputs: List[TxOut]) -> Value:

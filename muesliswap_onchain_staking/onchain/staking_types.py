@@ -12,7 +12,7 @@ class StakingPosition(PlutusData):
     owner: Address
     pool_id: TokenName
     staked_since: POSIXTime
-    cumulative_pool_rpt_at_start: int
+    cumulative_pool_rpts_at_start: List[int]
 
 
 # REDEEMERS ############################################################################################################

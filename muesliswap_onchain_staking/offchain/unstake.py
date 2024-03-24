@@ -77,8 +77,8 @@ def main(
     )
 
     # construct output datum
-    new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_reward_per_token(
-        prev_cum_rpt=prev_stake_state_datum.cumulative_reward_per_token,
+    new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_rewards_per_token(
+        prev_cum_rpt=prev_stake_state_datum.cumulative_rewards_per_token,
         emission_rate=prev_stake_state_datum.emission_rate,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
@@ -89,7 +89,7 @@ def main(
         emission_rate=prev_stake_state_datum.emission_rate,
         last_update_time=current_time,
         amount_staked=prev_stake_state_datum.amount_staked - unlock_amount,
-        cumulative_reward_per_token=new_cumulative_pool_rpt,
+        cumulative_rewards_per_token=new_cumulative_pool_rpt,
     )
 
     # construct outputs
