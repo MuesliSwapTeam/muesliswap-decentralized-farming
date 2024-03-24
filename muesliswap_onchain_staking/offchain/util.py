@@ -59,12 +59,16 @@ def amount_of_token_in_value(
 def adjust_for_wrong_fee(
     tx_signed: Transaction,
     signing_keys: List[Union[SigningKey, ExtendedSigningKey]],
+    output_offset: int = 0,
     fee_offset: int = 0,
 ) -> Transaction:
     new_value = pycardano.transaction.Value(
-        coin=tx_signed.transaction_body.outputs[-1].amount.coin - fee_offset
+        coin=tx_signed.transaction_body.outputs[-1].amount.coin
+        - output_offset
+        - fee_offset
     )
     tx_signed.transaction_body.outputs[-1].amount = new_value
+    tx_signed.transaction_body.fee += fee_offset
 
     witness_set = tx_signed.transaction_witness_set
     witness_set.vkey_witnesses = []

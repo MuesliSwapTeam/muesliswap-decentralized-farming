@@ -13,7 +13,6 @@ from pycardano import (
     TransactionOutput,
     Redeemer,
 )
-from opshin.prelude import FinitePOSIXTime, POSIXTime
 from util import (
     with_min_lovelace,
     sorted_utxos,
@@ -81,25 +80,25 @@ def main(
     )
 
     # construct output datums
-    new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_rewards_per_token(
-        prev_cum_rpt=prev_stake_state_datum.cumulative_rewards_per_token,
-        emission_rate=prev_stake_state_datum.emission_rate,
+    new_cumulative_pool_rpts = stake_state.compute_updated_cumulative_rewards_per_token(
+        prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
+        emission_rates=prev_stake_state_datum.emission_rates,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
     stake_state_datum = stake_state.StakingState(
         params=prev_stake_state_datum.params,
-        emission_rate=prev_stake_state_datum.emission_rate,
+        emission_rates=prev_stake_state_datum.emission_rates,
         last_update_time=current_time,
         amount_staked=prev_stake_state_datum.amount_staked + amount_to_stake,
-        cumulative_rewards_per_token=new_cumulative_pool_rpt,
+        cumulative_rewards_per_token=new_cumulative_pool_rpts,
     )
     staking_position_datum = staking.StakingPosition(
         owner=add_stake_order_datum.owner,
         pool_id=add_stake_order_datum.pool_id,
         staked_since=current_time,
-        cumulative_pool_rpt_at_start=new_cumulative_pool_rpt,
+        cumulative_pool_rpts_at_start=new_cumulative_pool_rpts,
     )
 
     # construct outputs
@@ -151,7 +150,9 @@ def main(
 
     # submit the transaction
     context.submit_tx(
-        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=77580)
+        adjust_for_wrong_fee(
+            signed_tx, [payment_skey], fee_offset=100, output_offset=56_030
+        )
     )
 
     show_tx(signed_tx)

@@ -15,8 +15,14 @@ from pycardano import (
     Redeemer,
     Value,
 )
+from typing import List
 from opshin.prelude import Token
-from util import token_from_string, with_min_lovelace, asset_from_token
+from util import (
+    token_from_string,
+    with_min_lovelace,
+    asset_from_token,
+    adjust_for_wrong_fee,
+)
 
 
 def main(
@@ -24,7 +30,12 @@ def main(
     stake_token: Token = token_from_string(
         "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
     ),
-    emission_rate: int = 42_000,
+    reward_tokens: List[Token] = [
+        token_from_string(
+            "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+        )
+    ],
+    emission_rates: List[int] = [42_000],
 ):
     _, _, stake_state_address = get_contract(
         module_name(stake_state), compressed=False
@@ -52,13 +63,13 @@ def main(
     stake_state_datum = stake_state.StakingState(
         params=stake_state.StakingParams(
             pool_id=stake_state_nft_name,
-            reward_token=stake_token,
+            reward_tokens=reward_tokens,
             stake_token=stake_token,
         ),
-        emission_rate=emission_rate,
+        emission_rates=emission_rates,
         last_update_time=int(datetime.now().timestamp() * 1000),
         amount_staked=0,
-        cumulative_reward_per_token=0,
+        cumulative_rewards_per_token=[0] * len(reward_tokens),
     )
 
     # build the transaction
@@ -90,7 +101,9 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(signed_tx)
+    context.submit_tx(
+        adjust_for_wrong_fee(signed_tx, [payment_skey], output_offset=1_000)
+    )
 
     show_tx(signed_tx)
 

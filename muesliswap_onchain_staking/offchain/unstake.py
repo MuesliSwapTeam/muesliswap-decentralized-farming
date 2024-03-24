@@ -77,19 +77,19 @@ def main(
     )
 
     # construct output datum
-    new_cumulative_pool_rpt = stake_state.compute_updated_cumulative_rewards_per_token(
-        prev_cum_rpt=prev_stake_state_datum.cumulative_rewards_per_token,
-        emission_rate=prev_stake_state_datum.emission_rate,
+    new_cumulative_pool_rpts = stake_state.compute_updated_cumulative_rewards_per_token(
+        prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
+        emission_rates=prev_stake_state_datum.emission_rates,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
     stake_state_datum = stake_state.StakingState(
         params=prev_stake_state_datum.params,
-        emission_rate=prev_stake_state_datum.emission_rate,
+        emission_rates=prev_stake_state_datum.emission_rates,
         last_update_time=current_time,
         amount_staked=prev_stake_state_datum.amount_staked - unlock_amount,
-        cumulative_rewards_per_token=new_cumulative_pool_rpt,
+        cumulative_rewards_per_token=new_cumulative_pool_rpts,
     )
 
     # construct outputs
@@ -99,19 +99,25 @@ def main(
         datum=stake_state_datum,
     )
 
-    reward_amount = (
-        (new_cumulative_pool_rpt - staking_position_datum.cumulative_pool_rpt_at_start)
-        * unlock_amount
-    ) // (24 * 60 * 60 * 1000)
-
+    reward_amounts = [
+        ((new_crpt - start_crpt) * unlock_amount) // (24 * 60 * 60 * 1000)
+        for new_crpt, start_crpt in zip(
+            new_cumulative_pool_rpts,
+            staking_position_datum.cumulative_pool_rpts_at_start,
+        )
+    ]
+    reward_value = sum(
+        [
+            Value(multi_asset=asset_from_token(tk, am))
+            for tk, am in zip(
+                prev_stake_state_datum.params.reward_tokens, reward_amounts
+            )
+        ],
+        Value()
+    )
     unlock_payment_output = TransactionOutput(
         address=from_address(staking_position_datum.owner),
-        amount=staking_input.output.amount
-        + Value(
-            multi_asset=asset_from_token(
-                prev_stake_state_datum.params.reward_token, reward_amount
-            )
-        ),
+        amount=staking_input.output.amount + reward_value,
     )
 
     # build the transaction
@@ -124,20 +130,20 @@ def main(
     # - add outputs
     builder.add_output(stake_state_output)
     builder.add_output(unlock_payment_output)
-    builder.add_output(
-        with_min_lovelace(
-            TransactionOutput(
-                address=payment_address,
-                amount=Value(
-                    multi_asset=asset_from_token(
-                        prev_stake_state_datum.params.reward_token,
-                        999_286 - reward_amount,
-                    )
-                ),
-            ),
-            context,
-        )
-    )
+#    builder.add_output(
+#        with_min_lovelace(
+#            TransactionOutput(
+#                address=payment_address,
+#                amount=Value(
+#                    multi_asset=asset_from_token(
+#                        prev_stake_state_datum.params.reward_token,
+#                        999_286 - reward_amounts[0],
+#                    )
+#                ),
+#            ),
+#            context,
+#        )
+#    )
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
@@ -164,7 +170,7 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=0))
+    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], output_offset=0))
 
     show_tx(signed_tx)
 
