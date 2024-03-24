@@ -27,16 +27,12 @@ def main(
     ),
     stake_amount: int = 100,
 ):
-    _, _, stake_order_batching = get_contract(
-        module_name(batching), compressed=False
-    )  # TODO: change to compressed
+    _, _, stake_order_batching = get_contract(module_name(batching), compressed=True)
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
     # determine pool id from existing pool
-    _, _, stake_state_address = get_contract(
-        module_name(stake_state), False
-    )  # TODO: change to compressed
+    _, _, stake_state_address = get_contract(module_name(stake_state), compressed=True)
     stake_state_utxos = context.utxos(stake_state_address)
     assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
     stake_state_input = stake_state_utxos[0]

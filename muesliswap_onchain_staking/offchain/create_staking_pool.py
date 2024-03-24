@@ -38,11 +38,11 @@ def main(
     emission_rates: List[int] = [42_000],
 ):
     _, _, stake_state_address = get_contract(
-        module_name(stake_state), compressed=False
-    )  # TODO: change to compressed
+        module_name(stake_state), compressed=True
+    )
     stake_state_nft_script, stake_state_nft_policy_id, _ = get_contract(
-        module_name(stake_state_nft), compressed=False
-    )  # TODO: change to compressed
+        module_name(stake_state_nft), compressed=True
+    )
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 

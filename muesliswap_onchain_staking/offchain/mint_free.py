@@ -38,7 +38,7 @@ def main(
     amount: int,
 ):
     free_minting_contract_script, free_minting_contract_hash, _ = get_contract(
-        "free_mint", False
+        "free_mint", compressed=True
     )
 
     # Get payment address

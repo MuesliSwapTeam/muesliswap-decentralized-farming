@@ -25,8 +25,8 @@ def main(
     wallet: str = "staker",
 ):
     batching_script, _, stake_order_batching = get_contract(
-        module_name(batching), compressed=False
-    )  # TODO: change to compressed
+        module_name(batching), compressed=True
+    )
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
     batching_utxos = context.utxos(stake_order_batching)

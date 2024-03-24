@@ -33,27 +33,26 @@ def build_compressed(
     ]
     subprocess.run(command)
 
+    built_contract = Path(f"build/{script.stem}/script.cbor")
+    built_contract_compressed_cbor = Path(f"build/tmp.cbor")
 
-#    built_contract = Path(f"build/{script.stem}/script.cbor")
-#    built_contract_compressed_cbor = Path(f"build/tmp.cbor")
-#
-#    with built_contract_compressed_cbor.open("wb") as fp:
-#        subprocess.run(["plutonomy-cli", built_contract, "--default"], stdout=fp)
-#
-#    subprocess.run(
-#        [
-#            sys.executable,
-#            "-m",
-#            "uplc",
-#            "build",
-#            "--from-cbor",
-#            built_contract_compressed_cbor,
-#            "-o",
-#            f"build/{script.stem}_compressed",
-#            "--recursion-limit",
-#            "2000",
-#        ]
-#    )
+    with built_contract_compressed_cbor.open("wb") as fp:
+        subprocess.run(["plutonomy-cli", built_contract, "--default"], stdout=fp)
+
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "uplc",
+            "build",
+            "--from-cbor",
+            built_contract_compressed_cbor,
+            "-o",
+            f"build/{script.stem}_compressed",
+            "--recursion-limit",
+            "2000",
+        ]
+    )
 
 
 def main():
@@ -63,7 +62,7 @@ def main():
         args=[plutus_cbor_dumps(PlutusByteString(b"stake_state")).hex()],
     )
     _, stake_state_nft_script_hash, _ = get_contract(
-        module_name(stake_state_nft), compressed=False
+        module_name(stake_state_nft), compressed=True
     )
 
     build_compressed(
@@ -87,7 +86,7 @@ def main():
     )
 
     build_compressed("rewarding", free_mint.__file__)
-    _, _, staking_address = get_contract(module_name(staking), compressed=False)
+    _, _, staking_address = get_contract(module_name(staking), compressed=True)
 
     build_compressed(
         "spending",

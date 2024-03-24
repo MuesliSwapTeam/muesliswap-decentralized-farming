@@ -27,11 +27,11 @@ def main(
     wallet: str = "staker",
 ):
     stake_state_script, _, stake_state_address = get_contract(
-        module_name(stake_state), False
-    )  # TODO: change to compressed
+        module_name(stake_state), compressed=True
+    )
     staking_script, _, staking_address = get_contract(
-        module_name(staking), False
-    )  # TODO: change to compressed
+        module_name(staking), compressed=True
+    )
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
@@ -113,7 +113,7 @@ def main(
                 prev_stake_state_datum.params.reward_tokens, reward_amounts
             )
         ],
-        Value()
+        Value(),
     )
     unlock_payment_output = TransactionOutput(
         address=from_address(staking_position_datum.owner),
@@ -130,20 +130,20 @@ def main(
     # - add outputs
     builder.add_output(stake_state_output)
     builder.add_output(unlock_payment_output)
-#    builder.add_output(
-#        with_min_lovelace(
-#            TransactionOutput(
-#                address=payment_address,
-#                amount=Value(
-#                    multi_asset=asset_from_token(
-#                        prev_stake_state_datum.params.reward_token,
-#                        999_286 - reward_amounts[0],
-#                    )
-#                ),
-#            ),
-#            context,
-#        )
-#    )
+    #    builder.add_output(
+    #        with_min_lovelace(
+    #            TransactionOutput(
+    #                address=payment_address,
+    #                amount=Value(
+    #                    multi_asset=asset_from_token(
+    #                        prev_stake_state_datum.params.reward_token,
+    #                        999_286 - reward_amounts[0],
+    #                    )
+    #                ),
+    #            ),
+    #            context,
+    #        )
+    #    )
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
