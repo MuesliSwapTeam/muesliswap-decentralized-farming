@@ -75,6 +75,13 @@ def validator(
     assert range_is_short(
         tx_info.valid_range, MAX_VALIDITY_RANGE
     ), "Validity range longer than threshold."
+    assert (
+        amount_of_token_in_output(
+            Token(stake_state_nft_policy, previous_state.params.pool_id),
+            previous_state_input,
+        )
+        == 1
+    ), "Correct Pool auth NFT is not present."
 
     new_cumulative_pool_rpts = compute_updated_cumulative_rewards_per_token(
         previous_state.cumulative_rewards_per_token,
@@ -88,41 +95,51 @@ def validator(
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
 
-        order_input = tx_info.inputs[r.order_input_index].resolved
-        order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
-        provided_amount = amount_of_token_in_output(
-            previous_state.params.stake_token, order_input
-        )
-        desired_amount_staked = previous_state.amount_staked + provided_amount
+        prev_order_input_index = -1
+        prev_order_output_index = -1
+        desired_amount_staked = previous_state.amount_staked
 
-        stake_txout = outputs[r.order_output_index]
-        assert (
-            stake_txout.address == staking_address
-        ), "Order output doesn't send funds to staking address."
-        stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
-        assert isinstance(
-            stake_datum, StakingPosition
-        ), "Invalid staking position datum."
-        assert (
-            amount_of_token_in_output(
-                Token(stake_state_nft_policy, stake_datum.pool_id),
-                previous_state_input,
+        for i in range(len(r.order_input_indices)):
+            in_idx = r.order_input_indices[i]
+            assert (
+                in_idx > prev_order_input_index
+            ), "Order inputs not in strictly ascending order."
+            prev_order_input_index = in_idx
+            out_idx = r.order_output_indices[i]
+            assert (
+                out_idx > prev_order_output_index
+            ), "Order outputs not in strictly ascending order."
+            prev_order_output_index = out_idx
+
+            order_input = tx_info.inputs[in_idx].resolved
+            order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
+            provided_amount = amount_of_token_in_output(
+                previous_state.params.stake_token, order_input
             )
-            == 1
-        ), "Correct Pool auth NFT is not present."
-        assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
-        assert stake_datum.owner == order_datum.owner, "Owner mismatch."
-        assert lists_equal(
-            next_stake_state.cumulative_rewards_per_token,
-            stake_datum.cumulative_pool_rpts_at_start,
-        ), "Cumulative reward per token set incorrectly in staking position datum."
-        assert contained(
-            tx_info.valid_range, stake_datum.staked_since
-        ), "Invalid staking time."
-        staked_amount = amount_of_token_in_output(
-            previous_state.params.stake_token, stake_txout
-        )
-        assert staked_amount == provided_amount, "Staked amount < provided amount."
+            desired_amount_staked += provided_amount
+
+            stake_txout = outputs[out_idx]
+            assert (
+                stake_txout.address == staking_address
+            ), "Order output doesn't send funds to staking address."
+            stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
+            assert isinstance(
+                stake_datum, StakingPosition
+            ), "Invalid staking position datum."
+            assert order_datum.pool_id == previous_state.params.pool_id, "Invalid Pool ID."
+            assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
+            assert stake_datum.owner == order_datum.owner, "Owner mismatch."
+            assert lists_equal(
+                next_stake_state.cumulative_rewards_per_token,
+                stake_datum.cumulative_pool_rpts_at_start,
+            ), "Cumulative reward per token set incorrectly in staking position datum."
+            assert contained(
+                tx_info.valid_range, stake_datum.staked_since
+            ), "Invalid staking time."
+            staked_amount = amount_of_token_in_output(
+                previous_state.params.stake_token, stake_txout
+            )
+            assert staked_amount == provided_amount, "Staked amount < provided amount."
 
     elif isinstance(redeemer, UpdateParams):
         r: UpdateParams = redeemer

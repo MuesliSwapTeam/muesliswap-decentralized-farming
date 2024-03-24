@@ -38,9 +38,9 @@ class ApplyOrders(PlutusData):
     CONSTR_ID = 1
     state_input_index: int
     state_output_index: int
-    order_input_index: int  # TODO allow multiple orders
-    order_output_index: int  # TODO allow multiple orders
-    # license_input_index: int
+    order_input_indices: List[int]
+    order_output_indices: List[int]
+    # license_input_index: int  # TODO: support/require licenses
     current_time: POSIXTime
 
 
