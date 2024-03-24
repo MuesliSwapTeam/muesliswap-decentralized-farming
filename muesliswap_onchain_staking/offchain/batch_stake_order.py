@@ -50,7 +50,11 @@ def main(
     tx_inputs = sorted_utxos(batching_utxos + [stake_state_input] + payment_utxos)
     order_inputs = sorted(
         [
-            (tx_inputs.index(u), batching.AddStakeOrder.from_cbor(u.output.datum.cbor), u.output.amount)
+            (
+                tx_inputs.index(u),
+                batching.AddStakeOrder.from_cbor(u.output.datum.cbor),
+                u,
+            )
             for u in batching_utxos
         ]
     )
@@ -60,16 +64,17 @@ def main(
     total_amount_of_new_stake = sum(
         [
             amount_of_token_in_value(
-                prev_stake_state_datum.params.stake_token, u
+                prev_stake_state_datum.params.stake_token, u.output.amount
             )
             for u in batching_utxos
         ]
     )
 
     # construct redeemers
-    batching_apply_redeemer = Redeemer(
-        batching.ApplyOrder(stake_state_input_index=stake_state_input_index)
-    )
+    batching_apply_redeemers = [
+        Redeemer(batching.ApplyOrder(stake_state_input_index=stake_state_input_index))
+        for _ in order_inputs
+    ]
     stake_state_apply_redeemer = Redeemer(
         stake_state.ApplyOrders(
             state_input_index=stake_state_input_index,
@@ -113,13 +118,13 @@ def main(
     )
     staking_position_outputs = [
         TransactionOutput(
-            address=stake_state_address,
+            address=staking_address,
             amount=order_inputs[i][2].output.amount,
             datum=d,
         )
         for i, d in enumerate(staking_position_datums)
     ]
-    
+
     # build the transaction
     builder = TransactionBuilder(context)
     builder.auxiliary_data = AuxiliaryData(
@@ -143,12 +148,12 @@ def main(
         None,
         stake_state_apply_redeemer,
     )
-    for o in order_inputs:
+    for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
             o[2],
             batching_script,
             None,
-            batching_apply_redeemer,
+            r,
         )
 
     # sign the transaction
@@ -160,7 +165,7 @@ def main(
     # submit the transaction
     context.submit_tx(
         adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=100, output_offset=60_340
+            signed_tx, [payment_skey], fee_offset=150, output_offset=155_160
         )
     )
 
