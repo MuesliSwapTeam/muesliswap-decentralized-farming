@@ -130,20 +130,20 @@ def main(
     # - add outputs
     builder.add_output(stake_state_output)
     builder.add_output(unlock_payment_output)
-    #    builder.add_output(
-    #        with_min_lovelace(
-    #            TransactionOutput(
-    #                address=payment_address,
-    #                amount=Value(
-    #                    multi_asset=asset_from_token(
-    #                        prev_stake_state_datum.params.reward_token,
-    #                        999_286 - reward_amounts[0],
-    #                    )
-    #                ),
-    #            ),
-    #            context,
-    #        )
-    #    )
+    builder.add_output(
+        with_min_lovelace(
+            TransactionOutput(
+                address=payment_address,
+                amount=Value(
+                    multi_asset=asset_from_token(
+                        prev_stake_state_datum.params.reward_tokens[0],
+                        999_128 - reward_amounts[0],
+                    )
+                ),
+            ),
+            context,
+        )
+    )
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
@@ -170,7 +170,9 @@ def main(
     )
 
     # submit the transaction
-    context.submit_tx(adjust_for_wrong_fee(signed_tx, [payment_skey], output_offset=0))
+    context.submit_tx(
+        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=0, output_offset=0)
+    )
 
     show_tx(signed_tx)
 

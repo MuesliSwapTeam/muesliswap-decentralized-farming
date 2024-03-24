@@ -37,9 +37,7 @@ def main(
     ],
     emission_rates: List[int] = [42_000],
 ):
-    _, _, stake_state_address = get_contract(
-        module_name(stake_state), compressed=True
-    )
+    _, _, stake_state_address = get_contract(module_name(stake_state), compressed=True)
     stake_state_nft_script, stake_state_nft_policy_id, _ = get_contract(
         module_name(stake_state_nft), compressed=True
     )
@@ -102,7 +100,7 @@ def main(
 
     # submit the transaction
     context.submit_tx(
-        adjust_for_wrong_fee(signed_tx, [payment_skey], output_offset=1_000)
+        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=100, output_offset=0)
     )
 
     show_tx(signed_tx)
