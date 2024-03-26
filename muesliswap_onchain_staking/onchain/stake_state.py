@@ -8,14 +8,6 @@ MAX_VALIDITY_RANGE = 3 * 60 * 1000  # 3 minutes
 
 
 # HELPER FUNCTIONS #####################################################################################################
-def resolve_linear_input_state(datum: StakingState) -> StakingState:
-    """
-    Resolve the datum of the input that is referenced by the redeemer.
-    """
-    # TODO could compare datum with previous_state_input.datum, but maybe not necessary
-    return datum
-
-
 def resolve_linear_output_state(
     next_state_output: TxOut, tx_info: TxInfo
 ) -> StakingState:
@@ -53,7 +45,7 @@ def compute_updated_cumulative_rewards_per_token(
 def validator(
     staking_address: Address,
     stake_state_nft_policy: PolicyId,
-    state: StakingState,
+    previous_state: StakingState,
     redeemer: StakeStateRedeemer,
     context: ScriptContext,
 ) -> None:
@@ -64,24 +56,33 @@ def validator(
     previous_state_input = resolve_linear_input(
         tx_info, redeemer.state_input_index, purpose
     )
-    previous_state = resolve_linear_input_state(state)
-
     next_state_output = resolve_linear_output(
         previous_state_input, tx_info, redeemer.state_output_index
     )
     next_stake_state = resolve_linear_output_state(next_state_output, tx_info)
     check_preserves_value(previous_state_input, next_state_output)
 
+    # Idea:
+    #  - keep validity range short to enforce current_time to be approximately accurate (i.e. up to range)
+    #  - last_update_time must be strictly increasing to prevent strange effects (e.g. negative rewards)
     assert range_is_short(
         tx_info.valid_range, MAX_VALIDITY_RANGE
     ), "Validity range longer than threshold."
+    assert contained(
+        tx_info.valid_range, redeemer.current_time
+    ), "Current time outside of validity interval."
+    assert (
+        previous_state.last_update_time < redeemer.current_time
+    ), "Update time must be strictly increasing."
+
+    # Ensure authenticity of pool by checking that corret pool NFT is present
     assert (
         amount_of_token_in_output(
             Token(stake_state_nft_policy, previous_state.params.pool_id),
             previous_state_input,
         )
         == 1
-    ), "Correct Pool auth NFT is not present."
+    ), "Correct Pool NFT is not present."
 
     new_cumulative_pool_rpts = compute_updated_cumulative_rewards_per_token(
         previous_state.cumulative_rewards_per_token,
@@ -95,6 +96,7 @@ def validator(
     if isinstance(redeemer, ApplyOrders):
         r: ApplyOrders = redeemer
 
+        # Idea: enforce strictly ascending in/out indices to ensure one-to-one mapping between inputs and outputs
         prev_order_input_index = -1
         prev_order_output_index = -1
         desired_amount_staked = previous_state.amount_staked
@@ -123,25 +125,25 @@ def validator(
                 stake_txout.address == staking_address
             ), "Order output doesn't send funds to staking address."
             stake_datum: StakingPosition = resolve_datum_unsafe(stake_txout, tx_info)
-            assert isinstance(
-                stake_datum, StakingPosition
-            ), "Invalid staking position datum."
-            assert order_datum.pool_id == previous_state.params.pool_id, "Invalid Pool ID."
+            assert (
+                order_datum.pool_id == previous_state.params.pool_id
+            ), "Invalid Pool ID."
             assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
             assert stake_datum.owner == order_datum.owner, "Owner mismatch."
+            assert (
+                stake_datum.staked_since == r.current_time
+            ), "Invalid staked since time."
             assert lists_equal(
-                next_stake_state.cumulative_rewards_per_token,
                 stake_datum.cumulative_pool_rpts_at_start,
+                next_stake_state.cumulative_rewards_per_token,
             ), "Cumulative reward per token set incorrectly in staking position datum."
-            assert contained(
-                tx_info.valid_range, stake_datum.staked_since
-            ), "Invalid staking time."
             staked_amount = amount_of_token_in_output(
                 previous_state.params.stake_token, stake_txout
             )
             assert staked_amount == provided_amount, "Staked amount < provided amount."
 
     elif isinstance(redeemer, UpdateParams):
+        # for now, suppose the only thing we allow to update is the emission rates
         r: UpdateParams = redeemer
         for rt in r.new_emission_rates:
             assert rt >= 0, "Negative emission rate."
@@ -159,9 +161,6 @@ def validator(
             previous_state.params.stake_token, staking_position_input
         )
         desired_amount_staked = previous_state.amount_staked - staked_amount
-        assert (
-            desired_amount_staked >= 0
-        ), "Unstake would result in negative amount staked."
 
         # check that owner receives the correct amount of reward tokens
         payment_output = tx_info.outputs[r.payment_output_index]
@@ -203,9 +202,3 @@ def validator(
     assert (
         desired_next_state == next_stake_state
     ), "Staking state not updated correctly."
-    assert (
-        previous_state.last_update_time < r.current_time
-    ), "Invalid current time (w.r.t. last update time)."
-    assert contained(
-        tx_info.valid_range, r.current_time
-    ), "Invalid current time in redeemer."
