@@ -171,7 +171,7 @@ def main(
     # submit the transaction
     context.submit_tx(
         adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=150, output_offset=155_160
+            signed_tx, [payment_skey], fee_offset=150, output_offset=86_200
         )
     )
 

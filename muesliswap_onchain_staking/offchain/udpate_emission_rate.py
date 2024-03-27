@@ -1,7 +1,7 @@
 import fire
 from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import stake_state
+from muesliswap_onchain_staking.onchain import staking, stake_state_nft
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -21,17 +21,24 @@ def main(
     new_emission_rates: List[int] = [43_000],
     wallet: str = "batcher",
 ):
-    stake_state_script, _, stake_state_address = get_contract(
-        module_name(stake_state), compressed=True
+    staking_script, _, staking_address = get_contract(
+        module_name(staking), compressed=True
+    )
+    _, stake_state_nft_script_hash, _ = get_contract(
+        module_name(stake_state_nft), compressed=True
     )
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
-    stake_state_utxos = context.utxos(stake_state_address)
-    assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
-    stake_state_input = stake_state_utxos[0]
+    staking_utxos = context.utxos(staking_address)
 
-    prev_stake_state_datum = stake_state.StakingState.from_cbor(
+    for u in staking_utxos:
+        if u.output.amount.multi_asset.get(stake_state_nft_script_hash):
+            stake_state_input = u
+            break
+    assert stake_state_input, "No stake state found."
+
+    prev_stake_state_datum = staking.StakingState.from_cbor(
         stake_state_input.output.datum.cbor
     )
 
@@ -41,7 +48,7 @@ def main(
 
     # construct redeemers
     stake_state_apply_redeemer = Redeemer(
-        stake_state.UpdateParams(
+        staking.UpdateParams(
             state_input_index=stake_state_input_index,
             state_output_index=0,
             new_emission_rates=new_emission_rates,
@@ -50,14 +57,14 @@ def main(
     )
 
     # construct output datums
-    new_cumulative_pool_rpts = stake_state.compute_updated_cumulative_rewards_per_token(
+    new_cumulative_pool_rpts = staking.compute_updated_cumulative_rewards_per_token(
         prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
         emission_rates=prev_stake_state_datum.emission_rates,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
-    stake_state_datum = stake_state.StakingState(
+    stake_state_datum = staking.StakingState(
         params=prev_stake_state_datum.params,
         emission_rates=new_emission_rates,
         last_update_time=current_time,
@@ -67,7 +74,7 @@ def main(
 
     # construct outputs
     stake_state_output = TransactionOutput(
-        address=stake_state_address,
+        address=staking_address,
         amount=stake_state_input.output.amount,
         datum=stake_state_datum,
     )
@@ -89,7 +96,7 @@ def main(
     # - add script inputs
     builder.add_script_input(
         stake_state_input,
-        stake_state_script,
+        staking_script,
         None,
         stake_state_apply_redeemer,
     )
@@ -103,7 +110,7 @@ def main(
     # submit the transaction
     context.submit_tx(
         adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=100, output_offset=12_930
+            signed_tx, [payment_skey], fee_offset=100, output_offset=64_650
         )
     )
 
