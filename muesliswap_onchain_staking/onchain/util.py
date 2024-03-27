@@ -2,6 +2,7 @@ from hashlib import sha256
 
 from opshin.prelude import *
 from opshin.std.builtins import *
+from opshin.std.fractions import *
 from muesliswap_onchain_staking.onchain.utils.ext_interval import *
 
 EMTPY_TOKENNAME_DICT: Dict[bytes, int] = {}
@@ -144,7 +145,7 @@ def check_output_reasonably_sized(output: TxOut, attached_datum: Anything) -> No
     assert len(serialise_data(attached_datum)) <= 1000, "Attached datum too large"
 
 
-def lists_equal(a: List[int], b: List[int]) -> bool:
+def fract_lists_equal(a: List[Fraction], b: List[Fraction]) -> bool:
     """
     Check if two lists are equal
     """
@@ -272,3 +273,10 @@ def amount_of_token_in_value(
 
 def value_from_token(token: Token, amount: int) -> Value:
     return {token.policy_id: {token.token_name: amount}}
+
+
+def floor_scale_fraction(f: Fraction, s: int) -> int:
+    """
+    Returns floor(f * s)
+    """
+    return (f.numerator * s) // f.denominator

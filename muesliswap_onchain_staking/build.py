@@ -7,7 +7,6 @@ from uplc.ast import PlutusByteString, plutus_cbor_dumps
 from muesliswap_onchain_staking.onchain import (
     batching,
     staking,
-    stake_state,
     free_mint,
     stake_state_nft,
 )
@@ -67,16 +66,6 @@ def main():
 
     build_compressed(
         "spending",
-        batching.__file__,
-        args=[
-            plutus_cbor_dumps(
-                PlutusByteString(stake_state_nft_script_hash.payload)
-            ).hex()
-        ],
-    )
-
-    build_compressed(
-        "spending",
         staking.__file__,
         args=[
             plutus_cbor_dumps(
@@ -84,20 +73,17 @@ def main():
             ).hex()
         ],
     )
-
-    build_compressed("rewarding", free_mint.__file__)
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
 
     build_compressed(
         "spending",
-        stake_state.__file__,
+        batching.__file__,
         args=[
             to_address(staking_address).to_cbor().hex(),
-            plutus_cbor_dumps(
-                PlutusByteString(stake_state_nft_script_hash.payload)
-            ).hex(),
         ],
     )
+
+    build_compressed("rewarding", free_mint.__file__)
 
 
 if __name__ == "__main__":
