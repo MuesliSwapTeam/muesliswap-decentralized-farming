@@ -82,7 +82,7 @@ def validator(
             tx_info, sr.state_input_index, purpose
         )
         previous_state: StakingState = datum
-        next_state_output = resolve_linear_output(
+        next_state_output = resolve_linear_output_unsafe(
             previous_state_input, tx_info, sr.state_output_index
         )
         next_stake_state = resolve_linear_output_state(next_state_output, tx_info)

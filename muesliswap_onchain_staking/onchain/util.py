@@ -104,6 +104,20 @@ def resolve_linear_output(
     return next_state_output
 
 
+def resolve_linear_output_unsafe(
+    previous_state_input: TxOut, tx_info: TxInfo, output_index: int
+) -> TxOut:
+    """
+    Resolve the continuing output that is referenced by the redeemer. Does not enforce having only one output to the contract address.
+    """
+    outputs = tx_info.outputs
+    next_state_output = outputs[output_index]
+    assert (
+        next_state_output.address == previous_state_input.address
+    ), "Moved funds to different address"
+    return next_state_output
+
+
 def check_mint_exactly_one_to_address(mint: Value, token: Token, staking_output: TxOut):
     """
     Check that exactly one token is minted and sent to address

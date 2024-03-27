@@ -1,6 +1,6 @@
 import fire
 
-from muesliswap_onchain_staking.onchain import batching, stake_state
+from muesliswap_onchain_staking.onchain import batching, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -32,11 +32,11 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     # determine pool id from existing pool
-    _, _, stake_state_address = get_contract(module_name(stake_state), compressed=True)
-    stake_state_utxos = context.utxos(stake_state_address)
-    assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
-    stake_state_input = stake_state_utxos[0]
-    stake_state_datum = stake_state.StakingState.from_cbor(
+    _, _, staking_address = get_contract(module_name(staking), compressed=True)
+    staking_utxos = context.utxos(staking_address)
+    assert len(staking_utxos) == 1, "There should be exactly one staking UTxO."
+    stake_state_input = staking_utxos[0]
+    stake_state_datum = staking.StakingState.from_cbor(
         stake_state_input.output.datum.cbor
     )
     pool_id = stake_state_datum.params.pool_id

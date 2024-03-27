@@ -1,7 +1,7 @@
 import fire
 from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import batching, stake_state, staking
+from muesliswap_onchain_staking.onchain import batching, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -27,8 +27,8 @@ def main(
     batching_script, _, batching_address = get_contract(
         module_name(batching), compressed=True
     )
-    stake_state_script, _, stake_state_address = get_contract(
-        module_name(stake_state), compressed=True
+    staking_script, _, staking_address = get_contract(
+        module_name(staking), compressed=True
     )
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
 
@@ -36,18 +36,18 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    stake_state_utxos = context.utxos(stake_state_address)
+    staking_utxos = context.utxos(staking_address)
 
-    print("Stake state UTxOs:", stake_state_utxos)
+    print("Stake state UTxOs:", staking_utxos)
     print("Batching UTxOs:", batching_utxos)
 
-    assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
-    stake_state_input = stake_state_utxos[0]
-    prev_stake_state_datum = stake_state.StakingState.from_cbor(
-        stake_state_input.output.datum.cbor
+    assert len(staking_utxos) == 1, "There should be exactly one stake state UTxO."
+    staking_input = staking_utxos[0]
+    prev_stake_state_datum = staking.StakingState.from_cbor(
+        staking_input.output.datum.cbor
     )
 
-    tx_inputs = sorted_utxos(batching_utxos + [stake_state_input] + payment_utxos)
+    tx_inputs = sorted_utxos(batching_utxos + [staking_input] + payment_utxos)
     order_inputs = sorted(
         [
             (
@@ -59,7 +59,7 @@ def main(
         ]
     )
 
-    stake_state_input_index = tx_inputs.index(stake_state_input)
+    stake_state_input_index = tx_inputs.index(staking_input)
     current_time = int(datetime.now().timestamp() * 1000)
     total_amount_of_new_stake = sum(
         [
@@ -72,11 +72,16 @@ def main(
 
     # construct redeemers
     batching_apply_redeemers = [
-        Redeemer(batching.ApplyOrder(stake_state_input_index=stake_state_input_index))
-        for _ in order_inputs
+        Redeemer(
+            batching.ApplyOrder(
+                stake_state_input_index=stake_state_input_index,
+                staking_position_output_index=i + 1,
+            )
+        )
+        for i in range(len(order_inputs))
     ]
     stake_state_apply_redeemer = Redeemer(
-        stake_state.ApplyOrders(
+        staking.ApplyOrders(
             state_input_index=stake_state_input_index,
             state_output_index=0,
             order_input_indices=[o[0] for o in order_inputs],
@@ -86,14 +91,14 @@ def main(
     )
 
     # construct output datums
-    new_cumulative_pool_rpts = stake_state.compute_updated_cumulative_rewards_per_token(
+    new_cumulative_pool_rpts = staking.compute_updated_cumulative_rewards_per_token(
         prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
         emission_rates=prev_stake_state_datum.emission_rates,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
-    stake_state_datum = stake_state.StakingState(
+    stake_state_datum = staking.StakingState(
         params=prev_stake_state_datum.params,
         emission_rates=prev_stake_state_datum.emission_rates,
         last_update_time=current_time,
@@ -105,15 +110,16 @@ def main(
             owner=d.owner,
             pool_id=d.pool_id,
             staked_since=current_time,
+            batching_output_index=i + 1,
             cumulative_pool_rpts_at_start=new_cumulative_pool_rpts,
         )
-        for d in [o[1] for o in order_inputs]
+        for i, d in enumerate([o[1] for o in order_inputs])
     ]
 
     # construct outputs
     stake_state_output = TransactionOutput(
-        address=stake_state_address,
-        amount=stake_state_input.output.amount,
+        address=staking_address,
+        amount=staking_input.output.amount,
         datum=stake_state_datum,
     )
     staking_position_outputs = [
@@ -143,8 +149,8 @@ def main(
         builder.add_input(u)
     # - add script inputs
     builder.add_script_input(
-        stake_state_input,
-        stake_state_script,
+        staking_input,
+        staking_script,
         None,
         stake_state_apply_redeemer,
     )

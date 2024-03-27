@@ -1,7 +1,7 @@
 from datetime import datetime
 import fire
 
-from muesliswap_onchain_staking.onchain import stake_state, stake_state_nft
+from muesliswap_onchain_staking.onchain import staking, stake_state_nft
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -17,6 +17,7 @@ from pycardano import (
 )
 from typing import List
 from opshin.prelude import Token
+from opshin.std.fractions import Fraction
 from util import (
     token_from_string,
     with_min_lovelace,
@@ -37,7 +38,7 @@ def main(
     ],
     emission_rates: List[int] = [42_000],
 ):
-    _, _, stake_state_address = get_contract(module_name(stake_state), compressed=True)
+    _, _, staking_address = get_contract(module_name(staking), compressed=True)
     stake_state_nft_script, stake_state_nft_policy_id, _ = get_contract(
         module_name(stake_state_nft), compressed=True
     )
@@ -58,8 +59,8 @@ def main(
     stake_state_nft_redeemer = Redeemer(0)
 
     # construct the datum
-    stake_state_datum = stake_state.StakingState(
-        params=stake_state.StakingParams(
+    staking_state_datum = staking.StakingState(
+        params=staking.StakingParams(
             pool_id=stake_state_nft_name,
             reward_tokens=reward_tokens,
             stake_token=stake_token,
@@ -67,7 +68,7 @@ def main(
         emission_rates=emission_rates,
         last_update_time=int(datetime.now().timestamp() * 1000),
         amount_staked=0,
-        cumulative_rewards_per_token=[0] * len(reward_tokens),
+        cumulative_rewards_per_token=[Fraction(0, 1)] * len(reward_tokens),
     )
 
     # build the transaction
@@ -81,11 +82,11 @@ def main(
 
     # construct the output
     stake_state_output = TransactionOutput(
-        address=stake_state_address,
+        address=staking_address,
         amount=Value(
             coin=2000000, multi_asset=asset_from_token(stake_state_nft_token, 1)
         ),
-        datum=stake_state_datum,
+        datum=staking_state_datum,
     )
 
     builder.add_output(with_min_lovelace(stake_state_output, context))
