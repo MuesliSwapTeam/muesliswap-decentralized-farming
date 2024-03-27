@@ -1,7 +1,8 @@
 import fire
 from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import batching, stake_state, staking
+from muesliswap_onchain_staking.onchain import staking, stake_state_nft
+from muesliswap_onchain_staking.onchain.util import floor_scale_fraction
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, from_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -14,6 +15,7 @@ from pycardano import (
     Redeemer,
     Value,
 )
+from opshin.std.fractions import sub_fraction
 from util import (
     with_min_lovelace,
     sorted_utxos,
@@ -26,25 +28,26 @@ from util import (
 def main(
     wallet: str = "staker",
 ):
-    stake_state_script, _, stake_state_address = get_contract(
-        module_name(stake_state), compressed=True
-    )
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
+    )
+    _, stake_state_nft_script_hash, _ = get_contract(
+        module_name(stake_state_nft), compressed=True
     )
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
-    stake_state_utxos = context.utxos(stake_state_address)
     staking_utxos = context.utxos(staking_address)
+    for u in staking_utxos:
+        if u.output.amount.multi_asset.get(stake_state_nft_script_hash):
+            stake_state_input = u
+            break
+    assert stake_state_input, "No stake state found."
 
-    assert len(stake_state_utxos) == 1, "There should be exactly one stake state UTxO."
-    stake_state_input = stake_state_utxos[0]
-    assert len(staking_utxos) == 1, "There should be exactly one staking UTxO."
-    staking_input = staking_utxos[0]
+    staking_input = staking_utxos[0 if stake_state_input == staking_utxos[1] else 1]
 
-    prev_stake_state_datum = stake_state.StakingState.from_cbor(
+    prev_stake_state_datum = staking.StakingState.from_cbor(
         stake_state_input.output.datum.cbor
     )
     staking_position_datum = staking.StakingPosition.from_cbor(
@@ -62,7 +65,7 @@ def main(
 
     # construct redeemers
     stake_state_unstake_redeemer = Redeemer(
-        stake_state.Unstake(
+        staking.UnstakeState(
             state_input_index=stake_state_input_index,
             state_output_index=0,
             staking_position_input_index=staking_position_input_index,
@@ -71,20 +74,21 @@ def main(
         )
     )
     staking_unstake_redeemer = Redeemer(
-        staking.UnstakingRedeemer(
+        staking.UnstakePosition(
             state_input_index=stake_state_input_index,
+            staking_position_input_index=staking_position_input_index,
         )
     )
 
     # construct output datum
-    new_cumulative_pool_rpts = stake_state.compute_updated_cumulative_rewards_per_token(
+    new_cumulative_pool_rpts = staking.compute_updated_cumulative_rewards_per_token(
         prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
         emission_rates=prev_stake_state_datum.emission_rates,
         amount_staked=prev_stake_state_datum.amount_staked,
         last_update_time=prev_stake_state_datum.last_update_time,
         current_time=current_time,
     )
-    stake_state_datum = stake_state.StakingState(
+    stake_state_datum = staking.StakingState(
         params=prev_stake_state_datum.params,
         emission_rates=prev_stake_state_datum.emission_rates,
         last_update_time=current_time,
@@ -94,13 +98,17 @@ def main(
 
     # construct outputs
     stake_state_output = TransactionOutput(
-        address=stake_state_address,
+        address=staking_address,
         amount=stake_state_input.output.amount,
         datum=stake_state_datum,
     )
 
     reward_amounts = [
-        ((new_crpt - start_crpt) * unlock_amount) // (24 * 60 * 60 * 1000)
+        floor_scale_fraction(new_crpt, unlock_amount)
+        - floor_scale_fraction(
+            start_crpt,
+            unlock_amount,
+        )
         for new_crpt, start_crpt in zip(
             new_cumulative_pool_rpts,
             staking_position_datum.cumulative_pool_rpts_at_start,
@@ -137,7 +145,7 @@ def main(
                 amount=Value(
                     multi_asset=asset_from_token(
                         prev_stake_state_datum.params.reward_tokens[0],
-                        999_128 - reward_amounts[0],
+                        998_673 - reward_amounts[0],
                     )
                 ),
             ),
@@ -152,7 +160,7 @@ def main(
     # - add script inputs
     builder.add_script_input(
         stake_state_input,
-        stake_state_script,
+        staking_script,
         None,
         stake_state_unstake_redeemer,
     )

@@ -78,7 +78,7 @@ def validator(
         outputs = tx_info.outputs
 
         sr: StateRedeemer = redeemer
-        previous_state_input = resolve_linear_input(
+        previous_state_input = resolve_linear_input_unsafe(
             tx_info, sr.state_input_index, purpose
         )
         previous_state: StakingState = datum
@@ -194,8 +194,8 @@ def validator(
             assert (
                 staking_position_input.address == own_address
             ), "Invalid staking position."
-            assert only_one_input_from_address(
-                staking_position_input.address, tx_info.inputs
+            assert only_x_input_from_address(
+                staking_position_input.address, tx_info.inputs, 2
             ), "Trying to unstake more than one position at once."
             staking_position_datum: StakingPosition = resolve_datum_unsafe(
                 staking_position_input, tx_info

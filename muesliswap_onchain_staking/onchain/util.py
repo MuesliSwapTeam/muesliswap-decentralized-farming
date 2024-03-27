@@ -53,6 +53,10 @@ def only_one_input_from_address(address: Address, inputs: List[TxInInfo]) -> boo
     return sum([int(i.resolved.address == address) for i in inputs]) == 1
 
 
+def only_x_input_from_address(address: Address, inputs: List[TxInInfo], x: int) -> bool:
+    return sum([int(i.resolved.address == address) for i in inputs]) == x
+
+
 def only_one_output_to_address(address: Address, outputs: List[TxOut]) -> bool:
     return sum([int(i.address == address) for i in outputs]) == 1
 
@@ -87,6 +91,20 @@ def resolve_linear_input(tx_info: TxInfo, input_index: int, purpose: Spending) -
     return previous_state_input
 
 
+def resolve_linear_input_unsafe(tx_info: TxInfo, input_index: int, purpose: Spending) -> TxOut:
+    """
+    Resolve the input that is referenced by the redeemer.
+    Also checks that the input is referenced correctly.
+    *Does not* enforce having only one input from the contract address.
+    """
+    previous_state_input_unresolved = tx_info.inputs[input_index]
+    assert (
+        previous_state_input_unresolved.out_ref == purpose.tx_out_ref
+    ), f"Referenced wrong input"
+    previous_state_input = previous_state_input_unresolved.resolved
+    return previous_state_input
+
+
 def resolve_linear_output(
     previous_state_input: TxOut, tx_info: TxInfo, output_index: int
 ) -> TxOut:
@@ -108,7 +126,7 @@ def resolve_linear_output_unsafe(
     previous_state_input: TxOut, tx_info: TxInfo, output_index: int
 ) -> TxOut:
     """
-    Resolve the continuing output that is referenced by the redeemer. Does not enforce having only one output to the contract address.
+    Resolve the continuing output that is referenced by the redeemer. *Does not* enforce having only one output to the contract address.
     """
     outputs = tx_info.outputs
     next_state_output = outputs[output_index]
