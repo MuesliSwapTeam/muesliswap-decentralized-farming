@@ -13,6 +13,19 @@ class AddStakeOrder(PlutusData):
     pool_id: TokenName
 
 
+@dataclass
+class UnstakeOrder(PlutusData):
+    """
+    Datum for batching UTxOs: remove position from staking contract.
+    """
+
+    CONSTR_ID = 1
+    owner: Address
+    staking_position: TxOutRef
+
+#StakeOrderDatum = Union[AddStakeOrder, UnstakeOrder]
+
+
 # REDEEMERS ############################################################################################################
 @dataclass
 class ApplyOrder(PlutusData):

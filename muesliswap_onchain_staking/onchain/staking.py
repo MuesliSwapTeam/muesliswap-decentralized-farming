@@ -64,7 +64,6 @@ def validator(
         own_address = own_input_info.resolved.address
 
         stake_state_input = tx_info.inputs[r.state_input_index].resolved
-        stake_state: StakingState = resolve_datum_unsafe(stake_state_input, tx_info)
         assert stake_state_input.address == own_address, "Invalid stake state input."
 
         d: StakingPosition = datum
@@ -140,37 +139,51 @@ def validator(
                 prev_order_output_index = out_idx
 
                 order_input = tx_info.inputs[in_idx].resolved
-                order_datum: AddStakeOrder = resolve_datum_unsafe(order_input, tx_info)
-                provided_amount = amount_of_token_in_output(
-                    previous_state.params.stake_token, order_input
-                )
-                desired_amount_staked += provided_amount
+                order_datum = resolve_datum_unsafe(order_input, tx_info)
+                
+                if isinstance(order_datum, AddStakeOrder):
+                    od: AddStakeOrder = order_datum
+                    provided_amount = amount_of_token_in_output(
+                        previous_state.params.stake_token, order_input
+                    )
+                    desired_amount_staked += provided_amount
 
-                stake_txout = outputs[out_idx]
-                stake_datum: StakingPosition = resolve_datum_unsafe(
-                    stake_txout, tx_info
-                )
-                assert (
-                    order_datum.pool_id == previous_state.params.pool_id
-                ), "Invalid Pool ID."
-                assert stake_datum.pool_id == order_datum.pool_id, "Pool ID mismatch."
-                assert stake_datum.owner == order_datum.owner, "Owner mismatch."
-                assert (
-                    stake_datum.staked_since == r.current_time
-                ), "Invalid staked since time."
-                assert fract_lists_equal(
-                    stake_datum.cumulative_pool_rpts_at_start,
-                    next_stake_state.cumulative_rewards_per_token,
-                ), "Cumulative reward per token set incorrectly in staking position datum."
-                staked_amount = amount_of_token_in_output(
-                    previous_state.params.stake_token, stake_txout
-                )
-                assert (
-                    staked_amount == provided_amount
-                ), "Staked amount < provided amount."
-                assert (
-                    out_idx == stake_datum.batching_output_index
-                ), "Batching output index mismatch."
+                    stake_txout = outputs[out_idx]
+                    stake_datum: StakingPosition = resolve_datum_unsafe(
+                        stake_txout, tx_info
+                    )
+                    assert (
+                        od.pool_id == previous_state.params.pool_id
+                    ), "Invalid Pool ID."
+                    assert stake_datum.pool_id == od.pool_id, "Pool ID mismatch."
+                    assert stake_datum.owner == od.owner, "Owner mismatch."
+                    assert (
+                        stake_datum.staked_since == r.current_time
+                    ), "Invalid staked since time."
+                    assert fract_lists_equal(
+                        stake_datum.cumulative_pool_rpts_at_start,
+                        next_stake_state.cumulative_rewards_per_token,
+                    ), "Cumulative reward per token set incorrectly in staking position datum."
+                    staked_amount = amount_of_token_in_output(
+                        previous_state.params.stake_token, stake_txout
+                    )
+                    assert (
+                        staked_amount == provided_amount
+                    ), "Staked amount < provided amount."
+                    assert (
+                        out_idx == stake_datum.batching_output_index
+                    ), "Batching output index mismatch."
+                
+                elif isinstance(order_datum, UnstakeOrder):
+                    od: UnstakeOrder = order_datum
+
+                    # check that nft params match staking_position_input and owner
+
+                    # usual reward checks
+
+                    # update staked amount, etc.
+
+
 
         elif isinstance(redeemer, UpdateParams):
             # for now, suppose the only thing we allow to update is the emission rates
