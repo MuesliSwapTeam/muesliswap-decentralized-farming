@@ -9,6 +9,7 @@ from muesliswap_onchain_staking.onchain import (
     staking,
     free_mint,
     stake_state_nft,
+    unstake_permission_nft
 )
 from muesliswap_onchain_staking.utils.to_script_context import to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -62,6 +63,11 @@ def main():
     )
     _, stake_state_nft_script_hash, _ = get_contract(
         module_name(stake_state_nft), compressed=True
+    )
+
+    build_compressed(
+        "minting",
+        unstake_permission_nft.__file__,
     )
 
     build_compressed(
