@@ -9,7 +9,7 @@ from muesliswap_onchain_staking.onchain import (
     staking,
     free_mint,
     stake_state_nft,
-    unstake_permission_nft
+    unstake_permission_nft,
 )
 from muesliswap_onchain_staking.utils.to_script_context import to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -29,7 +29,7 @@ def build_compressed(
         script,
         *args,
         "--recursion-limit",
-        "2000",
+        "3000",
     ]
     subprocess.run(command)
 
@@ -69,6 +69,9 @@ def main():
         "minting",
         unstake_permission_nft.__file__,
     )
+    _, unstake_permission_nft_script_hash, _ = get_contract(
+        module_name(unstake_permission_nft), compressed=True
+    )
 
     build_compressed(
         "spending",
@@ -76,8 +79,12 @@ def main():
         args=[
             plutus_cbor_dumps(
                 PlutusByteString(stake_state_nft_script_hash.payload)
-            ).hex()
+            ).hex(),
+            plutus_cbor_dumps(
+                PlutusByteString(unstake_permission_nft_script_hash.payload)
+            ).hex(),
         ],
+        cli_options=("--cf", "--allow-isinstance-anything"),
     )
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
 

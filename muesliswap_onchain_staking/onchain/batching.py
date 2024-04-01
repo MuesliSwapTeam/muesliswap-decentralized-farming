@@ -6,7 +6,7 @@ from muesliswap_onchain_staking.onchain.staking_types import *
 # VALIDATOR ############################################################################################################
 def validator(
     staking_address: Address,
-    datum: AddStakeOrder,
+    datum: StakeOrder,
     redeemer: BatchingRedeemer,
     context: ScriptContext,
 ) -> None:

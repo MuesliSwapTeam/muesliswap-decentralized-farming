@@ -62,7 +62,7 @@ def main(
             )
         ),
     )
-    permission_nft_redeemer = UnstakePermissionNFTParams(
+    permission_nft_redeemer = UnstakeOrder(
         owner=unstake_order_datum.owner,
         staking_position_input=unstake_order_datum.staking_position_input,
     )
@@ -80,7 +80,7 @@ def main(
         Token(
             policy_id=unstake_permission_nft_pid.payload,
             token_name=unstake_permission_nft_token_name(
-                UnstakePermissionNFTParams(
+                UnstakeOrder(
                     owner=unstake_order_datum.owner,
                     staking_position_input=unstake_order_datum.staking_position_input,
                 ),

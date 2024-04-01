@@ -4,6 +4,7 @@ from opshin.prelude import *
 from opshin.std.builtins import *
 from opshin.std.fractions import *
 from muesliswap_onchain_staking.onchain.utils.ext_interval import *
+from muesliswap_onchain_staking.onchain.batching_types import *
 
 EMTPY_TOKENNAME_DICT: Dict[bytes, int] = {}
 EMPTY_VALUE_DICT: Value = {}
@@ -53,10 +54,6 @@ def only_one_input_from_address(address: Address, inputs: List[TxInInfo]) -> boo
     return sum([int(i.resolved.address == address) for i in inputs]) == 1
 
 
-def only_x_input_from_address(address: Address, inputs: List[TxInInfo], x: int) -> bool:
-    return sum([int(i.resolved.address == address) for i in inputs]) == x
-
-
 def only_one_output_to_address(address: Address, outputs: List[TxOut]) -> bool:
     return sum([int(i.address == address) for i in outputs]) == 1
 
@@ -91,7 +88,9 @@ def resolve_linear_input(tx_info: TxInfo, input_index: int, purpose: Spending) -
     return previous_state_input
 
 
-def resolve_linear_input_unsafe(tx_info: TxInfo, input_index: int, purpose: Spending) -> TxOut:
+def resolve_linear_input_unsafe(
+    tx_info: TxInfo, input_index: int, purpose: Spending
+) -> TxOut:
     """
     Resolve the input that is referenced by the redeemer.
     Also checks that the input is referenced correctly.
@@ -145,6 +144,24 @@ def check_mint_exactly_one_to_address(mint: Value, token: Token, staking_output:
     assert (
         amount_of_token_in_output(token, staking_output) == 1
     ), "Exactly one token must be sent to staking address"
+
+
+def unstake_permission_nft_token_name(params: UnstakeOrder) -> TokenName:
+    return blake2b_256(params.to_cbor())
+
+
+def check_correct_unstake_permission_nft(
+    order_input: TxOut,
+    unstake_permission_nft_policy: PolicyId,
+    unstake_permission_nft_params: UnstakeOrder,
+) -> None:
+    desired_nft_name = unstake_permission_nft_token_name(unstake_permission_nft_params)
+    assert (
+        amount_of_token_in_output(
+            Token(unstake_permission_nft_policy, desired_nft_name), order_input
+        )
+        == 1
+    ), "Not exactly one unstake permission NFT in order input"
 
 
 def check_greater_or_equal_value(a: Value, b: Value) -> None:

@@ -42,7 +42,7 @@ def main(
     pool_id = stake_state_datum.params.pool_id
 
     # construct the stake order datum
-    stake_order_datum = batching.AddStakeOrder(
+    stake_order_datum = batching.StakeOrder(
         owner=to_address(payment_address),
         pool_id=pool_id,
     )

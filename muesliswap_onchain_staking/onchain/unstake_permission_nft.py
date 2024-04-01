@@ -2,24 +2,10 @@
 from opshin.prelude import *
 from opshin.std.builtins import *
 from muesliswap_onchain_staking.onchain.util import *
+from muesliswap_onchain_staking.onchain.batching_types import *
 
 
-@dataclass
-class UnstakePermissionNFTParams(PlutusData):
-    """
-    Parameters for the unstake permission NFT
-    """
-
-    CONSTR_ID = 0
-    owner: Address
-    staking_position: TxOutRef
-
-
-def unstake_permission_nft_token_name(params: UnstakePermissionNFTParams) -> TokenName:
-    return blake2b_256(params.to_cbor())
-
-
-def validator(redeemer: UnstakePermissionNFTParams, context: ScriptContext) -> None:
+def validator(redeemer: UnstakeOrder, context: ScriptContext) -> None:
     """
     Permission NFT
 

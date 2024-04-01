@@ -48,6 +48,7 @@ def compute_updated_cumulative_rewards_per_token(
 # VALIDATOR ############################################################################################################
 def validator(
     stake_state_nft_policy: PolicyId,
+    unstake_permission_nft_policy: PolicyId,
     datum: StakingDatum,
     redeemer: StakingRedeemer,
     context: ScriptContext,
@@ -72,6 +73,19 @@ def validator(
         ), "Pool NFT is not present in stake_state input."
 
         assert user_signed_tx(d.owner, tx_info), "Owner did not sign transaction."
+
+        # check existence of respective order with matching unstake permission NFT
+        unstake_order = tx_info.inputs[r.unstaking_order_input_index].resolved
+        order_datum: UnstakeOrder = resolve_datum_unsafe(unstake_order, tx_info)
+        assert order_datum.owner == d.owner, "Owner mismatch."
+        assert (
+            order_datum.staking_position == own_input_info.out_ref
+        ), "Invalid unstake order."
+        check_correct_unstake_permission_nft(
+            unstake_order,
+            unstake_permission_nft_policy,
+            order_datum,
+        )
 
     else:  # meaning we're spending the state UTxO
         outputs = tx_info.outputs
@@ -121,9 +135,16 @@ def validator(
         if isinstance(redeemer, ApplyOrders):
             r: ApplyOrders = redeemer
 
+            own_input_info = context.tx_info.inputs[r.state_input_index]
+            assert (
+                own_input_info.out_ref == purpose.tx_out_ref
+            ), "Index of own (state) input does not match purpose"
+            own_address = own_input_info.resolved.address
+
             # Idea: enforce strictly ascending in/out indices to ensure one-to-one mapping between inputs and outputs
             prev_order_input_index = -1
             prev_order_output_index = -1
+            prev_staking_position_input_index = -1
             desired_amount_staked = previous_state.amount_staked
 
             for i in range(len(r.order_input_indices)):
@@ -137,12 +158,17 @@ def validator(
                     out_idx > prev_order_output_index
                 ), "Order outputs not in strictly ascending order."
                 prev_order_output_index = out_idx
+                staking_pos_idx = r.staking_position_input_indices[i]
+                assert (
+                    staking_pos_idx > prev_staking_position_input_index
+                ), "Staking position inputs not in strictly ascending order."
+                prev_staking_position_input_index = staking_pos_idx
 
                 order_input = tx_info.inputs[in_idx].resolved
                 order_datum = resolve_datum_unsafe(order_input, tx_info)
-                
-                if isinstance(order_datum, AddStakeOrder):
-                    od: AddStakeOrder = order_datum
+
+                if isinstance(order_datum, StakeOrder):
+                    od: StakeOrder = order_datum
                     provided_amount = amount_of_token_in_output(
                         previous_state.params.stake_token, order_input
                     )
@@ -173,17 +199,49 @@ def validator(
                     assert (
                         out_idx == stake_datum.batching_output_index
                     ), "Batching output index mismatch."
-                
+
                 elif isinstance(order_datum, UnstakeOrder):
-                    od: UnstakeOrder = order_datum
+                    staking_position_input = tx_info.inputs[staking_pos_idx].resolved
+                    staking_position_datum: StakingPosition = resolve_datum_unsafe(
+                        staking_position_input, tx_info
+                    )
 
-                    # check that nft params match staking_position_input and owner
+                    assert (
+                        staking_position_input.address == own_address
+                    ), "Invalid staking position."
+                    unstaked_amount = amount_of_token_in_output(
+                        previous_state.params.stake_token, staking_position_input
+                    )
+                    desired_amount_staked -= unstaked_amount
 
-                    # usual reward checks
+                    # check that owner cannot claim more than expected reward
+                    payment_output = tx_info.outputs[out_idx]
+                    expected_reward_amounts = [
+                        floor_scale_fraction(
+                            new_cumulative_pool_rpts[i], unstaked_amount
+                        )
+                        - floor_scale_fraction(
+                            staking_position_datum.cumulative_pool_rpts_at_start[i],
+                            unstaked_amount,
+                        )
+                        for i in range(len(previous_state.params.reward_tokens))
+                    ]
+                    expected_reward_value = sum_values(
+                        [
+                            value_from_token(
+                                previous_state.params.reward_tokens[i],
+                                expected_reward_amounts[i],
+                            )
+                            for i in range(len(previous_state.params.reward_tokens))
+                        ]
+                    )
+                    check_greater_or_equal_value(
+                        add_value(staking_position_input.value, expected_reward_value),
+                        payment_output.value,
+                    )
 
-                    # update staked amount, etc.
-
-
+                else:
+                    assert False, "Invalid order datum."
 
         elif isinstance(redeemer, UpdateParams):
             # for now, suppose the only thing we allow to update is the emission rates
@@ -192,55 +250,6 @@ def validator(
                 assert rt >= 0, "Negative emission rate."
             new_emission_rates = r.new_emission_rates
             desired_amount_staked = previous_state.amount_staked
-
-        elif isinstance(redeemer, UnstakeState):
-            r: UnstakeState = redeemer
-
-            staking_position_input = tx_info.inputs[
-                r.staking_position_input_index
-            ].resolved
-            own_input_info = context.tx_info.inputs[redeemer.state_input_index]
-            assert (
-                own_input_info.out_ref == purpose.tx_out_ref
-            ), "Index of own input does not match purpose"
-            own_address = own_input_info.resolved.address
-            assert (
-                staking_position_input.address == own_address
-            ), "Invalid staking position."
-            assert only_x_input_from_address(
-                staking_position_input.address, tx_info.inputs, 2
-            ), "Trying to unstake more than one position at once."
-            staking_position_datum: StakingPosition = resolve_datum_unsafe(
-                staking_position_input, tx_info
-            )
-            staked_amount = amount_of_token_in_output(
-                previous_state.params.stake_token, staking_position_input
-            )
-            desired_amount_staked = previous_state.amount_staked - staked_amount
-
-            # check that owner cannot claim more than expected reward
-            payment_output = tx_info.outputs[r.payment_output_index]
-            expected_reward_amounts = [
-                floor_scale_fraction(new_cumulative_pool_rpts[i], staked_amount)
-                - floor_scale_fraction(
-                    staking_position_datum.cumulative_pool_rpts_at_start[i],
-                    staked_amount,
-                )
-                for i in range(len(previous_state.params.reward_tokens))
-            ]
-            expected_reward_value = sum_values(
-                [
-                    value_from_token(
-                        previous_state.params.reward_tokens[i],
-                        expected_reward_amounts[i],
-                    )
-                    for i in range(len(previous_state.params.reward_tokens))
-                ]
-            )
-            check_greater_or_equal_value(
-                add_value(staking_position_input.value, expected_reward_value),
-                payment_output.value,
-            )
 
         else:
             assert False, "Invalid redeemer."

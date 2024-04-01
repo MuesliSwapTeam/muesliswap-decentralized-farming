@@ -3,7 +3,7 @@ from opshin.prelude import *
 
 # DATUMS ##############################################################################################################
 @dataclass
-class AddStakeOrder(PlutusData):
+class StakeOrder(PlutusData):
     """
     Datum for batching UTxOs: add new position to staking contract.
     """
@@ -23,8 +23,6 @@ class UnstakeOrder(PlutusData):
     owner: Address
     staking_position: TxOutRef
 
-#StakeOrderDatum = Union[AddStakeOrder, UnstakeOrder]
-
 
 # REDEEMERS ############################################################################################################
 @dataclass
@@ -33,7 +31,7 @@ class ApplyOrder(PlutusData):
     Redeemer for applying order from batching contract to staking.
     """
 
-    CONSTR_ID = 1
+    CONSTR_ID = 0
     stake_state_input_index: int
     staking_position_output_index: int
 
@@ -44,7 +42,7 @@ class CancelOrder(PlutusData):
     Redeemer for unstaking.
     """
 
-    CONSTR_ID = 2
+    CONSTR_ID = 1
 
 
 BatchingRedeemer = Union[ApplyOrder, CancelOrder]

@@ -52,7 +52,7 @@ def main(
         [
             (
                 tx_inputs.index(u),
-                batching.AddStakeOrder.from_cbor(u.output.datum.cbor),
+                batching.StakeOrder.from_cbor(u.output.datum.cbor),
                 u,
             )
             for u in batching_utxos

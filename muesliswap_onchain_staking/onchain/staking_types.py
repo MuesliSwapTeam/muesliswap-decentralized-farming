@@ -57,6 +57,7 @@ class ApplyOrders(PlutusData):
     state_input_index: int
     state_output_index: int
     order_input_indices: List[int]
+    staking_position_input_indices: List[int]
     order_output_indices: List[int]
     # license_input_index: int  # TODO: support/require licenses
     current_time: POSIXTime
@@ -76,29 +77,17 @@ class UpdateParams(PlutusData):
 
 
 @dataclass
-class UnstakeState(PlutusData):
+class UnstakePosition(PlutusData):
     """
     Redeemer for unstaking.
     """
 
     CONSTR_ID = 2
     state_input_index: int
-    state_output_index: int
     staking_position_input_index: int
+    unstaking_order_input_index: int
     payment_output_index: int
-    current_time: POSIXTime
 
 
-@dataclass
-class UnstakePosition(PlutusData):
-    """
-    Redeemer for unstaking.
-    """
-
-    CONSTR_ID = 3
-    state_input_index: int
-    staking_position_input_index: int
-
-
-StakingRedeemer = Union[ApplyOrders, UpdateParams, UnstakePosition, UnstakeState]
-StateRedeemer = Union[ApplyOrders, UpdateParams, UnstakeState]
+StakingRedeemer = Union[ApplyOrders, UpdateParams, UnstakePosition]
+StateRedeemer = Union[ApplyOrders, UpdateParams]
