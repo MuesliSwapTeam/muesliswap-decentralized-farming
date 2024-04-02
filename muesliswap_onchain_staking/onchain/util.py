@@ -54,6 +54,10 @@ def only_one_input_from_address(address: Address, inputs: List[TxInInfo]) -> boo
     return sum([int(i.resolved.address == address) for i in inputs]) == 1
 
 
+def exactly_n_inputs_from_address(address: Address, inputs: List[TxInInfo], n: int) -> bool:
+    return sum([int(i.resolved.address == address) for i in inputs]) == n
+
+
 def only_one_output_to_address(address: Address, outputs: List[TxOut]) -> bool:
     return sum([int(i.address == address) for i in outputs]) == 1
 

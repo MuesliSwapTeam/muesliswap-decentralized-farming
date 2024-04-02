@@ -144,8 +144,8 @@ def validator(
             # Idea: enforce strictly ascending in/out indices to ensure one-to-one mapping between inputs and outputs
             prev_order_input_index = -1
             prev_order_output_index = -1
-            prev_staking_position_input_index = -1
             desired_amount_staked = previous_state.amount_staked
+            no_unstakes = 0
 
             for i in range(len(r.order_input_indices)):
                 in_idx = r.order_input_indices[i]
@@ -158,11 +158,6 @@ def validator(
                     out_idx > prev_order_output_index
                 ), "Order outputs not in strictly ascending order."
                 prev_order_output_index = out_idx
-                staking_pos_idx = r.staking_position_input_indices[i]
-                assert (
-                    staking_pos_idx > prev_staking_position_input_index
-                ), "Staking position inputs not in strictly ascending order."
-                prev_staking_position_input_index = staking_pos_idx
 
                 order_input = tx_info.inputs[in_idx].resolved
                 order_datum = resolve_datum_unsafe(order_input, tx_info)
@@ -201,11 +196,18 @@ def validator(
                     ), "Batching output index mismatch."
 
                 elif isinstance(order_datum, UnstakeOrder):
-                    staking_position_input = tx_info.inputs[staking_pos_idx].resolved
+                    od: UnstakeOrder = order_datum
+                    staking_position_input = tx_info.inputs[
+                        r.staking_position_input_indices[i]
+                    ].resolved
                     staking_position_datum: StakingPosition = resolve_datum_unsafe(
                         staking_position_input, tx_info
                     )
+                    no_unstakes += 1
 
+                    assert (
+                        od.staking_position == tx_info.inputs[in_idx]
+                    ), "Invalid reference to staking position."
                     assert (
                         staking_position_input.address == own_address
                     ), "Invalid staking position."
@@ -242,6 +244,10 @@ def validator(
 
                 else:
                     assert False, "Invalid order datum."
+
+            assert exactly_n_inputs_from_address(
+                own_address, tx_info.inputs, no_unstakes + 1
+            ), "Spending too many staking positions."
 
         elif isinstance(redeemer, UpdateParams):
             # for now, suppose the only thing we allow to update is the emission rates
