@@ -58,6 +58,9 @@ def validator(
 
     if isinstance(redeemer, UnstakePosition):
         r: UnstakePosition = redeemer
+        assert isinstance(datum, StakingPosition), "Invalid datum type."
+        d: StakingPosition = datum
+
         own_input_info = context.tx_info.inputs[r.staking_position_input_index]
         assert (
             own_input_info.out_ref == purpose.tx_out_ref
@@ -67,12 +70,9 @@ def validator(
         stake_state_input = tx_info.inputs[r.state_input_index].resolved
         assert stake_state_input.address == own_address, "Invalid stake state input."
 
-        d: StakingPosition = datum
         assert token_present_in_output(
             Token(stake_state_nft_policy, d.pool_id), stake_state_input
         ), "Pool NFT is not present in stake_state input."
-
-        assert user_signed_tx(d.owner, tx_info), "Owner did not sign transaction."
 
         # check existence of respective order with matching unstake permission NFT
         unstake_order = tx_info.inputs[r.unstaking_order_input_index].resolved
