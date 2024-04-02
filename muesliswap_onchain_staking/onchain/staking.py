@@ -101,6 +101,12 @@ def validator(
         next_stake_state = resolve_linear_output_state(next_state_output, tx_info)
         check_preserves_value(previous_state_input, next_state_output)
 
+        own_input_info = tx_info.inputs[sr.state_input_index]
+        assert (
+            own_input_info.out_ref == purpose.tx_out_ref
+        ), "Index of own (state) input does not match purpose"
+        own_address = own_input_info.resolved.address
+
         # Idea:
         #  - keep validity range short to enforce current_time to be approximately accurate (i.e. up to range)
         #  - last_update_time must be strictly increasing to prevent strange effects (e.g. negative rewards)
@@ -134,12 +140,6 @@ def validator(
 
         if isinstance(redeemer, ApplyOrders):
             r: ApplyOrders = redeemer
-
-            own_input_info = context.tx_info.inputs[r.state_input_index]
-            assert (
-                own_input_info.out_ref == purpose.tx_out_ref
-            ), "Index of own (state) input does not match purpose"
-            own_address = own_input_info.resolved.address
 
             # Idea: enforce strictly ascending in/out indices to ensure one-to-one mapping between inputs and outputs
             prev_order_input_index = -1
@@ -250,6 +250,9 @@ def validator(
                 assert rt >= 0, "Negative emission rate."
             new_emission_rates = r.new_emission_rates
             desired_amount_staked = previous_state.amount_staked
+
+            # ensure that no staking positions can be spent
+            only_one_input_from_address(own_address, tx_info.inputs)
 
         else:
             assert False, "Invalid redeemer."
