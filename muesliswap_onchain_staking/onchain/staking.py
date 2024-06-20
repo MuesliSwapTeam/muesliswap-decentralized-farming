@@ -88,6 +88,7 @@ def validator(
         )
 
     else:  # meaning we're spending the state UTxO
+        assert isinstance(datum, StakingState), "Invalid datum type."
         outputs = tx_info.outputs
 
         sr: StateRedeemer = redeemer
@@ -145,7 +146,7 @@ def validator(
             prev_order_input_index = -1
             prev_order_output_index = -1
             desired_amount_staked = previous_state.amount_staked
-            no_unstakes = 0
+            no_new_stakes, no_unstakes = 0, 0
 
             for i in range(len(r.order_input_indices)):
                 in_idx = r.order_input_indices[i]
@@ -168,11 +169,15 @@ def validator(
                         previous_state.params.stake_token, order_input
                     )
                     desired_amount_staked += provided_amount
+                    no_new_stakes += 1
 
                     stake_txout = outputs[out_idx]
-                    stake_datum: StakingPosition = resolve_datum_unsafe(
+                    out_datum = resolve_datum_unsafe(
                         stake_txout, tx_info
                     )
+                    assert isinstance(out_datum, StakingPosition), "Invalid output datum type."
+                    stake_datum: StakingPosition = out_datum
+
                     assert (
                         od.pool_id == previous_state.params.pool_id
                     ), "Invalid Pool ID."
@@ -245,6 +250,9 @@ def validator(
                 else:
                     assert False, "Invalid order datum."
 
+            assert exactly_n_outputs_to_address(
+                own_address, tx_info.outputs, no_new_stakes + 1
+            ), "Creating too many new staking positions."
             assert exactly_n_inputs_from_address(
                 own_address, tx_info.inputs, no_unstakes + 1
             ), "Spending too many staking positions."

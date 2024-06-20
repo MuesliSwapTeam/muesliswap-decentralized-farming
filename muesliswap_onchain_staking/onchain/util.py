@@ -62,6 +62,10 @@ def only_one_output_to_address(address: Address, outputs: List[TxOut]) -> bool:
     return sum([int(i.address == address) for i in outputs]) == 1
 
 
+def exactly_n_outputs_to_address(address: Address, outputs: List[TxOut], n: int) -> bool:
+    return sum([int(i.address == address) for i in outputs]) == n
+
+
 def user_signed_tx(address: Address, tx_info: TxInfo) -> bool:
     return address.payment_credential.credential_hash in tx_info.signatories
 

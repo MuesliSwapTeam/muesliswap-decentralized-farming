@@ -23,7 +23,9 @@ def validator(
         assert (
             staking_position_output.address == staking_address
         ), "Stake not going to staking contract."
-        staking_datum: StakingPosition = resolve_datum_unsafe(staking_position_output, tx_info)
+        staking_datum: StakingPosition = resolve_datum_unsafe(
+            staking_position_output, tx_info
+        )
         assert (
             staking_datum.batching_output_index
             == redeemer.staking_position_output_index
