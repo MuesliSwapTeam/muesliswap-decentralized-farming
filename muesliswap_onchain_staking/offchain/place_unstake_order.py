@@ -3,7 +3,7 @@ import fire
 from muesliswap_onchain_staking.onchain import (
     batching,
     staking,
-    stake_state_nft,
+    farm_nft,
     unstake_permission_nft,
 )
 from muesliswap_onchain_staking.onchain.unstake_permission_nft import *
@@ -36,8 +36,8 @@ def main(
 ):
     _, _, stake_order_batching = get_contract(module_name(batching), compressed=True)
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
-    _, stake_state_nft_script_hash, _ = get_contract(
-        module_name(stake_state_nft), compressed=True
+    _, farm_nft_script_hash, _ = get_contract(
+        module_name(farm_nft), compressed=True
     )
     unstake_permission_nft_script, unstake_permission_nft_pid, _ = get_contract(
         module_name(unstake_permission_nft), compressed=True
@@ -48,7 +48,7 @@ def main(
 
     staking_utxos = context.utxos(staking_address)
     for u in staking_utxos:
-        if not u.output.amount.multi_asset.get(stake_state_nft_script_hash):
+        if not u.output.amount.multi_asset.get(farm_nft_script_hash):
             staking_position_input = u
             break
     assert staking_position_input, "No staking position found."

@@ -8,7 +8,7 @@ from muesliswap_onchain_staking.onchain import (
     batching,
     staking,
     free_mint,
-    stake_state_nft,
+    farm_nft,
     unstake_permission_nft,
 )
 from muesliswap_onchain_staking.utils.to_script_context import to_address
@@ -58,11 +58,11 @@ def build_compressed(
 def main():
     build_compressed(
         "minting",
-        stake_state_nft.__file__,
-        args=[plutus_cbor_dumps(PlutusByteString(b"stake_state")).hex()],
+        farm_nft.__file__,
+        args=[plutus_cbor_dumps(PlutusByteString(b"farm")).hex()],
     )
-    _, stake_state_nft_script_hash, _ = get_contract(
-        module_name(stake_state_nft), compressed=True
+    _, farm_nft_script_hash, _ = get_contract(
+        module_name(farm_nft), compressed=True
     )
 
     build_compressed(
@@ -78,7 +78,7 @@ def main():
         staking.__file__,
         args=[
             plutus_cbor_dumps(
-                PlutusByteString(stake_state_nft_script_hash.payload)
+                PlutusByteString(farm_nft_script_hash.payload)
             ).hex(),
             plutus_cbor_dumps(
                 PlutusByteString(unstake_permission_nft_script_hash.payload)

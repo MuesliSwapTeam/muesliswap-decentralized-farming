@@ -32,7 +32,7 @@ class ApplyOrder(PlutusData):
     """
 
     CONSTR_ID = 0
-    stake_state_input_index: int
+    farm_input_index: int
     staking_position_output_index: int
 
 

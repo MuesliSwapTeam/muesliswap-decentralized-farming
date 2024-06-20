@@ -35,11 +35,11 @@ def main(
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
     staking_utxos = context.utxos(staking_address)
     assert len(staking_utxos) == 1, "There should be exactly one staking UTxO."
-    stake_state_input = staking_utxos[0]
-    stake_state_datum = staking.StakingState.from_cbor(
-        stake_state_input.output.datum.cbor
+    farm_input = staking_utxos[0]
+    farm_datum = staking.FarmState.from_cbor(
+        farm_input.output.datum.cbor
     )
-    pool_id = stake_state_datum.params.pool_id
+    pool_id = farm_datum.params.pool_id
 
     # construct the stake order datum
     stake_order_datum = batching.StakeOrder(

@@ -1,7 +1,7 @@
 import fire
 from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import staking, stake_state_nft
+from muesliswap_onchain_staking.onchain import staking, farm_nft
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -24,8 +24,8 @@ def main(
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
     )
-    _, stake_state_nft_script_hash, _ = get_contract(
-        module_name(stake_state_nft), compressed=True
+    _, farm_nft_script_hash, _ = get_contract(
+        module_name(farm_nft), compressed=True
     )
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
@@ -33,24 +33,24 @@ def main(
     staking_utxos = context.utxos(staking_address)
 
     for u in staking_utxos:
-        if u.output.amount.multi_asset.get(stake_state_nft_script_hash):
-            stake_state_input = u
+        if u.output.amount.multi_asset.get(farm_nft_script_hash):
+            farm_input = u
             break
-    assert stake_state_input, "No stake state found."
+    assert farm_input, "No farm found."
 
-    prev_stake_state_datum = staking.StakingState.from_cbor(
-        stake_state_input.output.datum.cbor
+    prev_farm_datum = staking.FarmState.from_cbor(
+        farm_input.output.datum.cbor
     )
 
-    tx_inputs = sorted_utxos([stake_state_input] + payment_utxos)
-    stake_state_input_index = tx_inputs.index(stake_state_input)
+    tx_inputs = sorted_utxos([farm_input] + payment_utxos)
+    farm_input_index = tx_inputs.index(farm_input)
     current_time = int(datetime.now().timestamp() * 1000)
 
     # construct redeemers
-    stake_state_apply_redeemer = Redeemer(
+    farm_apply_redeemer = Redeemer(
         staking.UpdateParams(
-            state_input_index=stake_state_input_index,
-            state_output_index=0,
+            farm_input_index=farm_input_index,
+            farm_output_index=0,
             new_emission_rates=new_emission_rates,
             current_time=current_time,
         )
@@ -58,25 +58,25 @@ def main(
 
     # construct output datums
     new_cumulative_pool_rpts = staking.compute_updated_cumulative_rewards_per_token(
-        prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
-        emission_rates=prev_stake_state_datum.emission_rates,
-        amount_staked=prev_stake_state_datum.amount_staked,
-        last_update_time=prev_stake_state_datum.last_update_time,
+        prev_cum_rpts=prev_farm_datum.cumulative_rewards_per_token,
+        emission_rates=prev_farm_datum.emission_rates,
+        amount_staked=prev_farm_datum.amount_staked,
+        last_update_time=prev_farm_datum.last_update_time,
         current_time=current_time,
     )
-    stake_state_datum = staking.StakingState(
-        params=prev_stake_state_datum.params,
+    farm_datum = staking.FarmState(
+        params=prev_farm_datum.params,
         emission_rates=new_emission_rates,
         last_update_time=current_time,
-        amount_staked=prev_stake_state_datum.amount_staked,
+        amount_staked=prev_farm_datum.amount_staked,
         cumulative_rewards_per_token=new_cumulative_pool_rpts,
     )
 
     # construct outputs
-    stake_state_output = TransactionOutput(
+    farm_output = TransactionOutput(
         address=staking_address,
-        amount=stake_state_input.output.amount,
-        datum=stake_state_datum,
+        amount=farm_input.output.amount,
+        datum=farm_datum,
     )
 
     # build the transaction
@@ -87,7 +87,7 @@ def main(
         )
     )
     # - add outputs
-    builder.add_output(with_min_lovelace(stake_state_output, context))
+    builder.add_output(with_min_lovelace(farm_output, context))
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     # - add inputs
@@ -95,10 +95,10 @@ def main(
         builder.add_input(u)
     # - add script inputs
     builder.add_script_input(
-        stake_state_input,
+        farm_input,
         staking_script,
         None,
-        stake_state_apply_redeemer,
+        farm_apply_redeemer,
     )
 
     # sign the transaction

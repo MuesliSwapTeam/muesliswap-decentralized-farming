@@ -4,7 +4,7 @@ from opshin.std.fractions import *
 
 # DATUMS ##############################################################################################################
 @dataclass
-class StakingParams(PlutusData):
+class FarmParams(PlutusData):
     """
     Non-updatable parameters of the staking contract
     """
@@ -16,13 +16,13 @@ class StakingParams(PlutusData):
 
 
 @dataclass
-class StakingState(PlutusData):
+class FarmState(PlutusData):
     """
     Tracks emission and stakes.
     """
 
     CONSTR_ID = 0
-    params: StakingParams
+    params: FarmParams
     emission_rates: List[int]  # in tokens per day
     last_update_time: POSIXTime
     amount_staked: int
@@ -43,7 +43,7 @@ class StakingPosition(PlutusData):
     cumulative_pool_rpts_at_start: List[Fraction]
 
 
-StakingDatum = Union[StakingState, StakingPosition]
+StakingDatum = Union[FarmState, StakingPosition]
 
 
 # REDEEMERS ############################################################################################################
@@ -54,8 +54,8 @@ class ApplyOrders(PlutusData):
     """
 
     CONSTR_ID = 0
-    state_input_index: int
-    state_output_index: int
+    farm_input_index: int
+    farm_output_index: int
     order_input_indices: List[int]
     staking_position_input_indices: List[int]
     order_output_indices: List[int]
@@ -70,8 +70,8 @@ class UpdateParams(PlutusData):
     """
 
     CONSTR_ID = 1
-    state_input_index: int
-    state_output_index: int
+    farm_input_index: int
+    farm_output_index: int
     new_emission_rates: List[int]
     current_time: POSIXTime
 
@@ -83,11 +83,11 @@ class UnstakePosition(PlutusData):
     """
 
     CONSTR_ID = 2
-    state_input_index: int
+    farm_input_index: int
     staking_position_input_index: int
     unstaking_order_input_index: int
     payment_output_index: int
 
 
 StakingRedeemer = Union[ApplyOrders, UpdateParams, UnstakePosition]
-StateRedeemer = Union[ApplyOrders, UpdateParams]
+FarmRedeemer = Union[ApplyOrders, UpdateParams]

@@ -85,15 +85,15 @@ def resolve_linear_input(tx_info: TxInfo, input_index: int, purpose: Spending) -
     Resolve the input that is referenced by the redeemer.
     Also checks that the input is referenced correctly and that there is only one.
     """
-    previous_state_input_unresolved = tx_info.inputs[input_index]
+    previous_farm_input_unresolved = tx_info.inputs[input_index]
     assert (
-        previous_state_input_unresolved.out_ref == purpose.tx_out_ref
+        previous_farm_input_unresolved.out_ref == purpose.tx_out_ref
     ), f"Referenced wrong input"
-    previous_state_input = previous_state_input_unresolved.resolved
+    previous_farm_input = previous_farm_input_unresolved.resolved
     assert only_one_input_from_address(
-        previous_state_input.address, tx_info.inputs
+        previous_farm_input.address, tx_info.inputs
     ), "More than one input from the contract address"
-    return previous_state_input
+    return previous_farm_input
 
 
 def resolve_linear_input_unsafe(
@@ -104,43 +104,43 @@ def resolve_linear_input_unsafe(
     Also checks that the input is referenced correctly.
     *Does not* enforce having only one input from the contract address.
     """
-    previous_state_input_unresolved = tx_info.inputs[input_index]
+    previous_farm_input_unresolved = tx_info.inputs[input_index]
     assert (
-        previous_state_input_unresolved.out_ref == purpose.tx_out_ref
+        previous_farm_input_unresolved.out_ref == purpose.tx_out_ref
     ), f"Referenced wrong input"
-    previous_state_input = previous_state_input_unresolved.resolved
-    return previous_state_input
+    previous_farm_input = previous_farm_input_unresolved.resolved
+    return previous_farm_input
 
 
 def resolve_linear_output(
-    previous_state_input: TxOut, tx_info: TxInfo, output_index: int
+    previous_farm_input: TxOut, tx_info: TxInfo, output_index: int
 ) -> TxOut:
     """
     Resolve the continuing output that is referenced by the redeemer. Checks that the output does not move funds to a different address.
     """
     outputs = tx_info.outputs
-    next_state_output = outputs[output_index]
+    next_farm_output = outputs[output_index]
     assert (
-        next_state_output.address == previous_state_input.address
+        next_farm_output.address == previous_farm_input.address
     ), "Moved funds to different address"
     assert only_one_output_to_address(
-        next_state_output.address, outputs
+        next_farm_output.address, outputs
     ), "More than one output to the contract address"
-    return next_state_output
+    return next_farm_output
 
 
 def resolve_linear_output_unsafe(
-    previous_state_input: TxOut, tx_info: TxInfo, output_index: int
+    previous_farm_input: TxOut, tx_info: TxInfo, output_index: int
 ) -> TxOut:
     """
     Resolve the continuing output that is referenced by the redeemer. *Does not* enforce having only one output to the contract address.
     """
     outputs = tx_info.outputs
-    next_state_output = outputs[output_index]
+    next_farm_output = outputs[output_index]
     assert (
-        next_state_output.address == previous_state_input.address
+        next_farm_output.address == previous_farm_input.address
     ), "Moved funds to different address"
-    return next_state_output
+    return next_farm_output
 
 
 def check_mint_exactly_one_to_address(mint: Value, token: Token, staking_output: TxOut):
@@ -184,14 +184,14 @@ def check_greater_or_equal_value(a: Value, b: Value) -> None:
 
 
 def check_preserves_value(
-    previous_state_input: TxOut, next_state_output: TxOut
+    previous_farm_input: TxOut, next_farm_output: TxOut
 ) -> None:
     """
     Check that the value of the previous state input is equal to the value of the next state output
     """
-    previous_state_value = previous_state_input.value
-    next_state_value = next_state_output.value
-    check_greater_or_equal_value(next_state_value, previous_state_value)
+    previous_farm_value = previous_farm_input.value
+    next_farm_value = next_farm_output.value
+    check_greater_or_equal_value(next_farm_value, previous_farm_value)
 
 
 def check_output_reasonably_sized(output: TxOut, attached_datum: Anything) -> None:

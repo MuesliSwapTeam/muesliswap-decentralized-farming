@@ -1,7 +1,7 @@
 from datetime import datetime
 import fire
 
-from muesliswap_onchain_staking.onchain import staking, stake_state_nft
+from muesliswap_onchain_staking.onchain import staking, farm_nft
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -39,29 +39,29 @@ def main(
     emission_rates: List[int] = [42_000],
 ):
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
-    stake_state_nft_script, stake_state_nft_policy_id, _ = get_contract(
-        module_name(stake_state_nft), compressed=True
+    farm_nft_script, farm_nft_policy_id, _ = get_contract(
+        module_name(farm_nft), compressed=True
     )
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
-    # select UTxO to define the stake pool ID and generate expected stake_state_nft name
+    # select UTxO to define the stake pool ID and generate expected farm_nft name
     unique_utxo = payment_utxos[0]
-    stake_state_nft_name = stake_state_nft.stake_state_nft_name(
+    farm_nft_name = farm_nft.farm_nft_name(
         to_tx_out_ref(unique_utxo.input)
     )
-    stake_state_nft_token = Token(
-        policy_id=stake_state_nft_policy_id.payload,
-        token_name=stake_state_nft_name,
+    farm_nft_token = Token(
+        policy_id=farm_nft_policy_id.payload,
+        token_name=farm_nft_name,
     )
 
-    # construct redeemer for the stake_state_nft
-    stake_state_nft_redeemer = Redeemer(0)
+    # construct redeemer for the farm_nft
+    farm_nft_redeemer = Redeemer(0)
 
     # construct the datum
-    staking_state_datum = staking.StakingState(
-        params=staking.StakingParams(
-            pool_id=stake_state_nft_name,
+    staking_farm_datum = staking.FarmState(
+        params=staking.FarmParams(
+            pool_id=farm_nft_name,
             reward_tokens=reward_tokens,
             stake_token=stake_token,
         ),
@@ -78,19 +78,19 @@ def main(
     )
     for u in payment_utxos:
         builder.add_input(u)
-    builder.add_minting_script(stake_state_nft_script, stake_state_nft_redeemer)
+    builder.add_minting_script(farm_nft_script, farm_nft_redeemer)
 
     # construct the output
-    stake_state_output = TransactionOutput(
+    farm_output = TransactionOutput(
         address=staking_address,
         amount=Value(
-            coin=2000000, multi_asset=asset_from_token(stake_state_nft_token, 1)
+            coin=2000000, multi_asset=asset_from_token(farm_nft_token, 1)
         ),
-        datum=staking_state_datum,
+        datum=staking_farm_datum,
     )
 
-    builder.add_output(with_min_lovelace(stake_state_output, context))
-    builder.mint = asset_from_token(stake_state_nft_token, 1)
+    builder.add_output(with_min_lovelace(farm_output, context))
+    builder.mint = asset_from_token(farm_nft_token, 1)
     builder.ttl = context.last_block_slot + 100
 
     # sign the transaction

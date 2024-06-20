@@ -9,12 +9,12 @@ MILLIS_IN_DAY = 24 * 60 * 60 * 1000
 
 # HELPER FUNCTIONS #####################################################################################################
 def resolve_linear_output_state(
-    next_state_output: TxOut, tx_info: TxInfo
-) -> StakingState:
+    next_farm_output: TxOut, tx_info: TxInfo
+) -> FarmState:
     """
     Resolve the continuing datum of the output that is referenced by the redeemer.
     """
-    next_state: StakingState = resolve_datum_unsafe(next_state_output, tx_info)
+    next_state: FarmState = resolve_datum_unsafe(next_farm_output, tx_info)
     return next_state
 
 
@@ -47,7 +47,7 @@ def compute_updated_cumulative_rewards_per_token(
 
 # VALIDATOR ############################################################################################################
 def validator(
-    stake_state_nft_policy: PolicyId,
+    farm_nft_policy: PolicyId,
     unstake_permission_nft_policy: PolicyId,
     datum: StakingDatum,
     redeemer: StakingRedeemer,
@@ -67,12 +67,12 @@ def validator(
         ), "Index of own input does not match purpose"
         own_address = own_input_info.resolved.address
 
-        stake_state_input = tx_info.inputs[r.state_input_index].resolved
-        assert stake_state_input.address == own_address, "Invalid stake state input."
+        farm_input = tx_info.inputs[r.farm_input_index].resolved
+        assert farm_input.address == own_address, "Invalid farm input."
 
         assert token_present_in_output(
-            Token(stake_state_nft_policy, d.pool_id), stake_state_input
-        ), "Pool NFT is not present in stake_state input."
+            Token(farm_nft_policy, d.pool_id), farm_input
+        ), "Pool NFT is not present in farm input."
 
         # check existence of respective order with matching unstake permission NFT
         unstake_order = tx_info.inputs[r.unstaking_order_input_index].resolved
@@ -87,22 +87,22 @@ def validator(
             order_datum,
         )
 
-    else:  # meaning we're spending the state UTxO
-        assert isinstance(datum, StakingState), "Invalid datum type."
+    else:  # meaning we're spending the farm UTxO
+        assert isinstance(datum, FarmState), "Invalid datum type."
         outputs = tx_info.outputs
 
-        sr: StateRedeemer = redeemer
-        previous_state_input = resolve_linear_input_unsafe(
-            tx_info, sr.state_input_index, purpose
+        sr: FarmRedeemer = redeemer
+        previous_farm_input = resolve_linear_input_unsafe(
+            tx_info, sr.farm_input_index, purpose
         )
-        previous_state: StakingState = datum
-        next_state_output = resolve_linear_output_unsafe(
-            previous_state_input, tx_info, sr.state_output_index
+        previous_state: FarmState = datum
+        next_farm_output = resolve_linear_output_unsafe(
+            previous_farm_input, tx_info, sr.farm_output_index
         )
-        next_stake_state = resolve_linear_output_state(next_state_output, tx_info)
-        check_preserves_value(previous_state_input, next_state_output)
+        next_farm = resolve_linear_output_state(next_farm_output, tx_info)
+        check_preserves_value(previous_farm_input, next_farm_output)
 
-        own_input_info = tx_info.inputs[sr.state_input_index]
+        own_input_info = tx_info.inputs[sr.farm_input_index]
         assert (
             own_input_info.out_ref == purpose.tx_out_ref
         ), "Index of own (state) input does not match purpose"
@@ -124,8 +124,8 @@ def validator(
         # Ensure authenticity of pool by checking that corret pool NFT is present
         assert (
             amount_of_token_in_output(
-                Token(stake_state_nft_policy, previous_state.params.pool_id),
-                previous_state_input,
+                Token(farm_nft_policy, previous_state.params.pool_id),
+                previous_farm_input,
             )
             == 1
         ), "Correct Pool NFT is not present."
@@ -188,7 +188,7 @@ def validator(
                     ), "Invalid staked since time."
                     assert fract_lists_equal(
                         stake_datum.cumulative_pool_rpts_at_start,
-                        next_stake_state.cumulative_rewards_per_token,
+                        next_farm.cumulative_rewards_per_token,
                     ), "Cumulative reward per token set incorrectly in staking position datum."
                     staked_amount = amount_of_token_in_output(
                         previous_state.params.stake_token, stake_txout
@@ -272,7 +272,7 @@ def validator(
             assert False, "Invalid redeemer."
 
         # in any case, check that cumulative reward per token is updated correctly
-        desired_next_state = StakingState(
+        desired_next_state = FarmState(
             previous_state.params,
             new_emission_rates,
             r.current_time,
@@ -280,5 +280,5 @@ def validator(
             new_cumulative_pool_rpts,
         )
         assert (
-            desired_next_state == next_stake_state
+            desired_next_state == next_farm
         ), "Staking state not updated correctly."

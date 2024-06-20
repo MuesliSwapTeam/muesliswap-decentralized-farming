@@ -13,10 +13,10 @@ def validator(
     tx_info = context.tx_info
 
     if isinstance(redeemer, ApplyOrder):
-        stake_state_input = tx_info.inputs[redeemer.stake_state_input_index].resolved
+        farm_input = tx_info.inputs[redeemer.farm_input_index].resolved
         assert (
-            stake_state_input.address == staking_address
-        ), "Invalid stake state input."
+            farm_input.address == staking_address
+        ), "Invalid farm input."
         staking_position_output = tx_info.outputs[
             redeemer.staking_position_output_index
         ]

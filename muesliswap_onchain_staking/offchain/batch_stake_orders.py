@@ -38,12 +38,12 @@ def main(
     batching_utxos = context.utxos(batching_address)
     staking_utxos = context.utxos(staking_address)
 
-    print("Stake state UTxOs:", staking_utxos)
+    print("farm UTxOs:", staking_utxos)
     print("Batching UTxOs:", batching_utxos)
 
-    assert len(staking_utxos) == 1, "There should be exactly one stake state UTxO."
+    assert len(staking_utxos) == 1, "There should be exactly one farm UTxO."
     staking_input = staking_utxos[0]
-    prev_stake_state_datum = staking.StakingState.from_cbor(
+    prev_farm_datum = staking.FarmState.from_cbor(
         staking_input.output.datum.cbor
     )
 
@@ -59,12 +59,12 @@ def main(
         ]
     )
 
-    stake_state_input_index = tx_inputs.index(staking_input)
+    farm_input_index = tx_inputs.index(staking_input)
     current_time = int(datetime.now().timestamp() * 1000)
     total_amount_of_new_stake = sum(
         [
             amount_of_token_in_value(
-                prev_stake_state_datum.params.stake_token, u.output.amount
+                prev_farm_datum.params.stake_token, u.output.amount
             )
             for u in batching_utxos
         ]
@@ -74,16 +74,16 @@ def main(
     batching_apply_redeemers = [
         Redeemer(
             batching.ApplyOrder(
-                stake_state_input_index=stake_state_input_index,
+                farm_input_index=farm_input_index,
                 staking_position_output_index=i + 1,
             )
         )
         for i in range(len(order_inputs))
     ]
-    stake_state_apply_redeemer = Redeemer(
+    farm_apply_redeemer = Redeemer(
         staking.ApplyOrders(
-            state_input_index=stake_state_input_index,
-            state_output_index=0,
+            farm_input_index=farm_input_index,
+            farm_output_index=0,
             order_input_indices=[o[0] for o in order_inputs],
             order_output_indices=[i + 1 for i in range(len(order_inputs))],
             current_time=current_time,
@@ -92,17 +92,17 @@ def main(
 
     # construct output datums
     new_cumulative_pool_rpts = staking.compute_updated_cumulative_rewards_per_token(
-        prev_cum_rpts=prev_stake_state_datum.cumulative_rewards_per_token,
-        emission_rates=prev_stake_state_datum.emission_rates,
-        amount_staked=prev_stake_state_datum.amount_staked,
-        last_update_time=prev_stake_state_datum.last_update_time,
+        prev_cum_rpts=prev_farm_datum.cumulative_rewards_per_token,
+        emission_rates=prev_farm_datum.emission_rates,
+        amount_staked=prev_farm_datum.amount_staked,
+        last_update_time=prev_farm_datum.last_update_time,
         current_time=current_time,
     )
-    stake_state_datum = staking.StakingState(
-        params=prev_stake_state_datum.params,
-        emission_rates=prev_stake_state_datum.emission_rates,
+    farm_datum = staking.FarmState(
+        params=prev_farm_datum.params,
+        emission_rates=prev_farm_datum.emission_rates,
         last_update_time=current_time,
-        amount_staked=prev_stake_state_datum.amount_staked + total_amount_of_new_stake,
+        amount_staked=prev_farm_datum.amount_staked + total_amount_of_new_stake,
         cumulative_rewards_per_token=new_cumulative_pool_rpts,
     )
     staking_position_datums = [
@@ -117,10 +117,10 @@ def main(
     ]
 
     # construct outputs
-    stake_state_output = TransactionOutput(
+    farm_output = TransactionOutput(
         address=staking_address,
         amount=staking_input.output.amount,
-        datum=stake_state_datum,
+        datum=farm_datum,
     )
     staking_position_outputs = [
         TransactionOutput(
@@ -139,7 +139,7 @@ def main(
         )
     )
     # - add outputs
-    builder.add_output(with_min_lovelace(stake_state_output, context))
+    builder.add_output(with_min_lovelace(farm_output, context))
     for o in staking_position_outputs:
         builder.add_output(with_min_lovelace(o, context))
     builder.validity_start = context.last_block_slot - 50
@@ -152,7 +152,7 @@ def main(
         staking_input,
         staking_script,
         None,
-        stake_state_apply_redeemer,
+        farm_apply_redeemer,
     )
     for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
