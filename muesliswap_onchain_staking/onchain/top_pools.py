@@ -73,6 +73,7 @@ def validator(
         input_state, tx_info, redeemer.state_output_index
     )
     next_state = resolve_linear_output_state(next_state_output, tx_info)
+    # TODO: require winning gov proposal to update
     check_list_updated_correctly(
         datum.pool_rewards,
         next_state.pool_rewards,
