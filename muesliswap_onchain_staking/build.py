@@ -10,6 +10,7 @@ from muesliswap_onchain_staking.onchain import (
     free_mint,
     farm_nft,
     unstake_permission_nft,
+    top_pools,
 )
 from muesliswap_onchain_staking.utils.to_script_context import to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -57,13 +58,16 @@ def build_compressed(
 
 def main():
     build_compressed(
+        "spending",
+        top_pools.__file__,
+    )
+
+    build_compressed(
         "minting",
         farm_nft.__file__,
         args=[plutus_cbor_dumps(PlutusByteString(b"farm")).hex()],
     )
-    _, farm_nft_script_hash, _ = get_contract(
-        module_name(farm_nft), compressed=True
-    )
+    _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
 
     build_compressed(
         "minting",
@@ -77,9 +81,7 @@ def main():
         "spending",
         staking.__file__,
         args=[
-            plutus_cbor_dumps(
-                PlutusByteString(farm_nft_script_hash.payload)
-            ).hex(),
+            plutus_cbor_dumps(PlutusByteString(farm_nft_script_hash.payload)).hex(),
             plutus_cbor_dumps(
                 PlutusByteString(unstake_permission_nft_script_hash.payload)
             ).hex(),
