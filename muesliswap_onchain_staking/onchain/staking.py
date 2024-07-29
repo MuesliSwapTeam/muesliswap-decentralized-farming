@@ -274,6 +274,7 @@ def validator(
         # in any case, check that cumulative reward per token is updated correctly
         desired_next_state = FarmState(
             previous_state.params,
+            previous_state.farm_type,
             new_emission_rates,
             r.current_time,
             desired_amount_staked,

@@ -9,9 +9,10 @@ class TopPoolParams(PlutusData):
     pool_rewards: List[int]
 
 
+@dataclass
 class TopPoolState(PlutusData):
     CONSTR_ID = 0
-    top_pool_params: TopPoolParams
+    params: TopPoolParams
     pool_ranking: List[TokenName]
 
 
@@ -27,11 +28,12 @@ class UpdateParams(PlutusData):
 
 @dataclass
 class UpdateRanking(PlutusData):
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     state_input_index: int
     state_output_index: int
     old_rank: int
     new_rank: int
+    new_token_name: TokenName
 
 
 TopPoolRedeemer = Union[UpdateParams, UpdateRanking]
@@ -52,28 +54,28 @@ def check_ranking_updated_correctly(
     ranking_after: List[TokenName],
     old_rank: int,
     new_rank: int,
-    new_pool_id: Union[None, TokenName],
+    new_pool_id: TokenName,
 ) -> None:
-    len = len(ranking_after)
-    assert 0 <= new_rank < len and 0 <= old_rank
-    assert old_rank < len or new_pool_id is not None
-    for i in range(len):
+    rlen = len(ranking_after)
+    assert 0 <= new_rank < rlen and 0 <= old_rank
+    # assert old_rank < rlen or new_pool_id is not None
+    for i in range(rlen):
         if i < old_rank and i < new_rank:
             assert ranking_after[i] == ranking_before[i]
         elif old_rank <= i <= new_rank:
             if i == new_rank:
                 assert ranking_after[i] == (
-                    ranking_before[old_rank] if old_rank < len else new_pool_id
+                    ranking_before[old_rank] if old_rank < rlen else new_pool_id
                 )
             else:
-                if i + 1 < len:
+                if i + 1 < rlen:
                     assert ranking_after[i + 1] == ranking_before[i]
         elif old_rank >= i >= new_rank:
             if i == new_rank:
                 assert ranking_after[i] == ranking_before[old_rank]
             else:
                 assert ranking_after[i - 1] == ranking_before[i]
-        elif i > ranking_before and i > ranking_after:
+        elif i > old_rank and i > new_rank:
             assert ranking_after[i] == ranking_before[i]
 
 
@@ -126,8 +128,8 @@ def validator(
         r: UpdateParams = redeemer
         # TODO: require winning gov proposal to update
         check_rewards_updated_correctly(
-            datum.pool_rewards,
-            next_state.pool_rewards,
+            datum.params.pool_rewards,
+            next_state.params.pool_rewards,
             r.updated_reward_index,
             r.updated_amount,
         )
@@ -135,7 +137,11 @@ def validator(
     elif isinstance(redeemer, UpdateRanking):
         r: UpdateRanking = redeemer
         check_ranking_updated_correctly(
-            datum.pool_ranking, next_state.pool_ranking, r.old_rank, r.new_rank
+            datum.pool_ranking,
+            next_state.pool_ranking,
+            r.old_rank,
+            r.new_rank,
+            r.new_token_name,
         )
 
     else:
