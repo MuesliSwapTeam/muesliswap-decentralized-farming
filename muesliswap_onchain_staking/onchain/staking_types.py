@@ -16,6 +16,19 @@ class FarmParams(PlutusData):
 
 
 @dataclass
+class DefaultFarmType(PlutusData):
+    CONSTR_ID = 0
+
+
+@dataclass
+class TopPoolsFarmType(PlutusData):
+    CONSTR_ID = 1
+
+
+FarmType = Union[DefaultFarmType, TopPoolsFarmType]
+
+
+@dataclass
 class FarmState(PlutusData):
     """
     Tracks emission and stakes.
@@ -23,6 +36,7 @@ class FarmState(PlutusData):
 
     CONSTR_ID = 0
     params: FarmParams
+    farm_type: FarmType
     emission_rates: List[int]  # in tokens per day
     last_update_time: POSIXTime
     amount_staked: int

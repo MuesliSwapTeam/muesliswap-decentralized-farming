@@ -9,27 +9,75 @@ class TopPoolParams(PlutusData):
     pool_rewards: List[int]
 
 
+class TopPoolState(PlutusData):
+    CONSTR_ID = 0
+    top_pool_params: TopPoolParams
+    pool_ranking: List[TokenName]
+
+
 # REDEEMERS ############################################################################################################
 @dataclass
 class UpdateParams(PlutusData):
     CONSTR_ID = 0
-    updated_reward_index: int
-    updated_amount: int
     state_input_index: int
     state_output_index: int
+    updated_reward_index: int
+    updated_amount: int
+
+
+@dataclass
+class UpdateRanking(PlutusData):
+    CONSTR_ID = 0
+    state_input_index: int
+    state_output_index: int
+    old_rank: int
+    new_rank: int
+
+
+TopPoolRedeemer = Union[UpdateParams, UpdateRanking]
 
 
 def resolve_linear_output_state(
     next_state_output: TxOut, tx_info: TxInfo
-) -> TopPoolParams:
+) -> TopPoolState:
     """
     Resolve the continuing datum of the output that is referenced by the redeemer.
     """
-    next_state: TopPoolParams = resolve_datum_unsafe(next_state_output, tx_info)
+    next_state: TopPoolState = resolve_datum_unsafe(next_state_output, tx_info)
     return next_state
 
 
-def check_list_updated_correctly(
+def check_ranking_updated_correctly(
+    ranking_before: List[TokenName],
+    ranking_after: List[TokenName],
+    old_rank: int,
+    new_rank: int,
+    new_pool_id: Union[None, TokenName],
+) -> None:
+    len = len(ranking_after)
+    assert 0 <= new_rank < len and 0 <= old_rank
+    assert old_rank < len or new_pool_id is not None
+    for i in range(len):
+        if i < old_rank and i < new_rank:
+            assert ranking_after[i] == ranking_before[i]
+        elif old_rank <= i <= new_rank:
+            if i == new_rank:
+                assert ranking_after[i] == (
+                    ranking_before[old_rank] if old_rank < len else new_pool_id
+                )
+            else:
+                if i + 1 < len:
+                    assert ranking_after[i + 1] == ranking_before[i]
+        elif old_rank >= i >= new_rank:
+            if i == new_rank:
+                assert ranking_after[i] == ranking_before[old_rank]
+            else:
+                assert ranking_after[i - 1] == ranking_before[i]
+        elif i > ranking_before and i > ranking_after:
+            assert ranking_after[i] == ranking_before[i]
+
+
+def check_rewards_updated_correctly(
     pool_rewards_before: List[int],
     pool_rewards_after: List[int],
     updated_reward_index: int,
@@ -60,8 +108,8 @@ def check_list_updated_correctly(
 
 
 def validator(
-    datum: TopPoolParams,
-    redeemer: UpdateParams,
+    datum: TopPoolState,
+    redeemer: TopPoolRedeemer,
     context: ScriptContext,
 ) -> None:
     tx_info = context.tx_info
@@ -73,10 +121,22 @@ def validator(
         input_state, tx_info, redeemer.state_output_index
     )
     next_state = resolve_linear_output_state(next_state_output, tx_info)
-    # TODO: require winning gov proposal to update
-    check_list_updated_correctly(
-        datum.pool_rewards,
-        next_state.pool_rewards,
-        redeemer.updated_reward_index,
-        redeemer.updated_amount,
-    )
+
+    if isinstance(redeemer, UpdateParams):
+        r: UpdateParams = redeemer
+        # TODO: require winning gov proposal to update
+        check_rewards_updated_correctly(
+            datum.pool_rewards,
+            next_state.pool_rewards,
+            r.updated_reward_index,
+            r.updated_amount,
+        )
+
+    elif isinstance(redeemer, UpdateRanking):
+        r: UpdateRanking = redeemer
+        check_ranking_updated_correctly(
+            datum.pool_ranking, next_state.pool_ranking, r.old_rank, r.new_rank
+        )
+
+    else:
+        assert False, "Redeemer type unknown"
