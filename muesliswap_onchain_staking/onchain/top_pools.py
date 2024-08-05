@@ -13,7 +13,7 @@ class TopPoolParams(PlutusData):
 class TopPoolState(PlutusData):
     CONSTR_ID = 0
     params: TopPoolParams
-    pool_ranking: List[TokenName]
+    pool_ranking: List[Token]
 
 
 # REDEEMERS ############################################################################################################
@@ -33,8 +33,10 @@ class UpdateRanking(PlutusData):
     state_output_index: int
     old_rank: int
     new_rank: int
-    new_token_name: TokenName
-
+    new_token_name: Token
+    ref_input_index_pool: int
+    ref_input_index_pool_above: int
+    ref_input_index_pool_below: int
 
 TopPoolRedeemer = Union[UpdateParams, UpdateRanking]
 
@@ -49,12 +51,22 @@ def resolve_linear_output_state(
     return next_state
 
 
+def get_pool_liquidity(tx_info: TxInfo, pool_id: Token, ref_input_index: int) -> int:
+    pool_input = tx_info.inputs[ref_input_index].resolved
+    assert amount_of_token_in_output(pool_id, pool_input) == 1, "Invalid pool input"
+    return amount_of_ada_in_output(pool_input)
+
+
 def check_ranking_updated_correctly(
-    ranking_before: List[TokenName],
-    ranking_after: List[TokenName],
+    ranking_before: List[Token],
+    ranking_after: List[Token],
     old_rank: int,
     new_rank: int,
-    new_pool_id: TokenName,
+    new_pool_id: Token,
+    ref_input_index_pool: int,
+    ref_input_index_pool_above: int,
+    ref_input_index_pool_below: int,
+    tx_info: TxInfo,
 ) -> None:
     rlen = len(ranking_after)
     assert 0 <= new_rank < rlen and 0 <= old_rank
@@ -77,6 +89,11 @@ def check_ranking_updated_correctly(
                 assert ranking_after[i - 1] == ranking_before[i]
         elif i > old_rank and i > new_rank:
             assert ranking_after[i] == ranking_before[i]
+    
+    liquidity_above = get_pool_liquidity(tx_info, ranking_after[new_rank-1], ref_input_index_pool_above) if new_rank != 0 else MAX_ADA_VALUE
+    liquidity_below = get_pool_liquidity(tx_info, ranking_after[new_rank+1], ref_input_index_pool_below) if new_rank != rlen - 1 else 0
+    own_liquidity = get_pool_liquidity(tx_info, new_pool_id, ref_input_index_pool)
+    assert liquidity_above >= own_liquidity > liquidity_below, "Invalid liquidity ranking"
 
 
 def check_rewards_updated_correctly(
@@ -136,12 +153,17 @@ def validator(
 
     elif isinstance(redeemer, UpdateRanking):
         r: UpdateRanking = redeemer
+        # TODO: require pool liquidity to update
         check_ranking_updated_correctly(
             datum.pool_ranking,
             next_state.pool_ranking,
             r.old_rank,
             r.new_rank,
             r.new_token_name,
+            r.ref_input_index_pool,
+            r.ref_input_index_pool_above,
+            r.ref_input_index_pool_below,
+            tx_info,
         )
 
     else:

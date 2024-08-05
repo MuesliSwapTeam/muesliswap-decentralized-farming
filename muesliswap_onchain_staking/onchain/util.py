@@ -9,6 +9,8 @@ from muesliswap_onchain_staking.onchain.batching_types import *
 EMTPY_TOKENNAME_DICT: Dict[bytes, int] = {}
 EMPTY_VALUE_DICT: Value = {}
 
+MAX_ADA_VALUE = 45_000_000_000_000_000
+
 
 def get_minting_purpose(context: ScriptContext) -> Minting:
     purpose = context.purpose
@@ -54,7 +56,9 @@ def only_one_input_from_address(address: Address, inputs: List[TxInInfo]) -> boo
     return sum([int(i.resolved.address == address) for i in inputs]) == 1
 
 
-def exactly_n_inputs_from_address(address: Address, inputs: List[TxInInfo], n: int) -> bool:
+def exactly_n_inputs_from_address(
+    address: Address, inputs: List[TxInInfo], n: int
+) -> bool:
     return sum([int(i.resolved.address == address) for i in inputs]) == n
 
 
@@ -62,7 +66,9 @@ def only_one_output_to_address(address: Address, outputs: List[TxOut]) -> bool:
     return sum([int(i.address == address) for i in outputs]) == 1
 
 
-def exactly_n_outputs_to_address(address: Address, outputs: List[TxOut], n: int) -> bool:
+def exactly_n_outputs_to_address(
+    address: Address, outputs: List[TxOut], n: int
+) -> bool:
     return sum([int(i.address == address) for i in outputs]) == n
 
 
@@ -78,6 +84,10 @@ def vote_has_ended(
 
 def amount_of_token_in_output(token: Token, output: TxOut) -> int:
     return output.value.get(token.policy_id, {b"": 0}).get(token.token_name, 0)
+
+
+def amount_of_ada_in_output(output: TxOut) -> int:
+    return output.value.get(b"", {b"": 0}).get(b"", 0)
 
 
 def resolve_linear_input(tx_info: TxInfo, input_index: int, purpose: Spending) -> TxOut:
@@ -183,9 +193,7 @@ def check_greater_or_equal_value(a: Value, b: Value) -> None:
             ), f"Value of {policy_id.hex()}.{token_name.hex()} is too low"
 
 
-def check_preserves_value(
-    previous_farm_input: TxOut, next_farm_output: TxOut
-) -> None:
+def check_preserves_value(previous_farm_input: TxOut, next_farm_output: TxOut) -> None:
     """
     Check that the value of the previous state input is equal to the value of the next state output
     """
