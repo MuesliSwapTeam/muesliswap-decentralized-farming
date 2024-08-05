@@ -1,4 +1,3 @@
-# from muesliswap_onchain_staking.onchain
 from opshin.prelude import *
 from opshin.std.builtins import *
 from muesliswap_onchain_staking.onchain.util import *
