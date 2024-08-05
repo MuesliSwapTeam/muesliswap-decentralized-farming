@@ -8,14 +8,27 @@ MILLIS_IN_DAY = 24 * 60 * 60 * 1000
 
 
 # HELPER FUNCTIONS #####################################################################################################
-def resolve_linear_output_state(
-    next_farm_output: TxOut, tx_info: TxInfo
-) -> FarmState:
+def resolve_linear_output_state(next_farm_output: TxOut, tx_info: TxInfo) -> FarmState:
     """
     Resolve the continuing datum of the output that is referenced by the redeemer.
     """
     next_state: FarmState = resolve_datum_unsafe(next_farm_output, tx_info)
     return next_state
+
+
+def check_valid_current_time(
+    current_time: POSIXTime, last_update_time: POSIXTime, tx_info: TxInfo
+) -> None:
+    # Idea:
+    #  - keep validity range short to enforce current_time to be approximately accurate (i.e. up to range)
+    #  - last_update_time must be strictly increasing to prevent strange effects (e.g. negative rewards)
+    assert range_is_short(
+        tx_info.valid_range, MAX_VALIDITY_RANGE
+    ), "Validity range longer than threshold."
+    assert contained(
+        tx_info.valid_range, current_time
+    ), "Current time outside of validity interval."
+    assert last_update_time < current_time, "Update time must be strictly increasing."
 
 
 def compute_updated_cumulative_rewards_per_token(
@@ -108,18 +121,9 @@ def validator(
         ), "Index of own (state) input does not match purpose"
         own_address = own_input_info.resolved.address
 
-        # Idea:
-        #  - keep validity range short to enforce current_time to be approximately accurate (i.e. up to range)
-        #  - last_update_time must be strictly increasing to prevent strange effects (e.g. negative rewards)
-        assert range_is_short(
-            tx_info.valid_range, MAX_VALIDITY_RANGE
-        ), "Validity range longer than threshold."
-        assert contained(
-            tx_info.valid_range, sr.current_time
-        ), "Current time outside of validity interval."
-        assert (
-            previous_state.last_update_time < sr.current_time
-        ), "Update time must be strictly increasing."
+        check_valid_current_time(
+            sr.current_time, previous_state.last_update_time, tx_info
+        )
 
         # Ensure authenticity of pool by checking that corret pool NFT is present
         assert (
@@ -172,10 +176,10 @@ def validator(
                     no_new_stakes += 1
 
                     stake_txout = outputs[out_idx]
-                    out_datum = resolve_datum_unsafe(
-                        stake_txout, tx_info
-                    )
-                    assert isinstance(out_datum, StakingPosition), "Invalid output datum type."
+                    out_datum = resolve_datum_unsafe(stake_txout, tx_info)
+                    assert isinstance(
+                        out_datum, StakingPosition
+                    ), "Invalid output datum type."
                     stake_datum: StakingPosition = out_datum
 
                     assert (
@@ -280,6 +284,4 @@ def validator(
             desired_amount_staked,
             new_cumulative_pool_rpts,
         )
-        assert (
-            desired_next_state == next_farm
-        ), "Staking state not updated correctly."
+        assert desired_next_state == next_farm, "Staking state not updated correctly."
