@@ -5,6 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Create Farm",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.create_farm"
+        }, 
+        {
             "name": "Place Stake Order",
             "type": "debugpy",
             "request": "launch",
