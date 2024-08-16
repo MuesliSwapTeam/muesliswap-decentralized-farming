@@ -78,7 +78,7 @@ def main():
     )
 
     build_compressed(
-        "spending",
+        "any",
         staking.__file__,
         args=[
             plutus_cbor_dumps(PlutusByteString(farm_nft_script_hash.payload)).hex(),
@@ -86,7 +86,7 @@ def main():
                 PlutusByteString(unstake_permission_nft_script_hash.payload)
             ).hex(),
         ],
-        cli_options=("--cf", "--allow-isinstance-anything"),
+        cli_options=("--cf", "--allow-isinstance-anything", "--force-three-params"),
     )
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
 

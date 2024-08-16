@@ -34,7 +34,7 @@ class FarmState(PlutusData):
     Tracks emission and stakes.
     """
 
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     params: FarmParams
     farm_type: FarmType
     emission_rates: List[int]  # in tokens per day
@@ -49,7 +49,7 @@ class StakingPosition(PlutusData):
     Datum for staking position UTxO's.
     """
 
-    CONSTR_ID = 1
+    CONSTR_ID = 2
     owner: Address
     pool_id: TokenName
     staked_since: POSIXTime
@@ -67,7 +67,7 @@ class ApplyOrders(PlutusData):
     Redeemer for staking contract to apply batch of orders.
     """
 
-    CONSTR_ID = 0
+    CONSTR_ID = 1
     farm_input_index: int
     farm_output_index: int
     order_input_indices: List[int]
@@ -83,7 +83,7 @@ class UpdateParams(PlutusData):
     Redeemer for updating staking reward parameters.
     """
 
-    CONSTR_ID = 1
+    CONSTR_ID = 2
     farm_input_index: int
     farm_output_index: int
     new_emission_rates: List[int]
@@ -96,7 +96,7 @@ class UnstakePosition(PlutusData):
     Redeemer for unstaking.
     """
 
-    CONSTR_ID = 2
+    CONSTR_ID = 3
     farm_input_index: int
     staking_position_input_index: int
     unstaking_order_input_index: int
@@ -105,14 +105,14 @@ class UnstakePosition(PlutusData):
 
 @dataclass
 class MintApplyOrder(PlutusData):
-    CONSTR_ID = 3
+    CONSTR_ID = 4
     farm_input_index: int
     staking_position_output_index: int
 
 
 @dataclass
 class BurnNFT(PlutusData):
-    CONSTR_ID = 4
+    CONSTR_ID = 5
 
 
 StakingNFTRedeemer = Union[MintApplyOrder, BurnNFT]
