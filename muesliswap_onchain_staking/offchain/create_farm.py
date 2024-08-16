@@ -6,6 +6,12 @@ from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
 from muesliswap_onchain_staking.utils.to_script_context import to_tx_out_ref
+from muesliswap_onchain_staking.offchain.util import (
+    token_from_string,
+    with_min_lovelace,
+    asset_from_token,
+    adjust_for_wrong_fee,
+)
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -18,12 +24,6 @@ from pycardano import (
 from typing import List
 from opshin.prelude import Token
 from opshin.std.fractions import Fraction
-from util import (
-    token_from_string,
-    with_min_lovelace,
-    asset_from_token,
-    adjust_for_wrong_fee,
-)
 
 
 def main(
@@ -47,9 +47,7 @@ def main(
 
     # select UTxO to define the stake pool ID and generate expected farm_nft name
     unique_utxo = payment_utxos[0]
-    farm_nft_name = farm_nft.farm_nft_name(
-        to_tx_out_ref(unique_utxo.input)
-    )
+    farm_nft_name = farm_nft.farm_nft_name(to_tx_out_ref(unique_utxo.input))
     farm_nft_token = Token(
         policy_id=farm_nft_policy_id.payload,
         token_name=farm_nft_name,
@@ -65,6 +63,7 @@ def main(
             reward_tokens=reward_tokens,
             stake_token=stake_token,
         ),
+        farm_type=staking.DefaultFarmType(),
         emission_rates=emission_rates,
         last_update_time=int(datetime.now().timestamp() * 1000),
         amount_staked=0,
@@ -83,9 +82,7 @@ def main(
     # construct the output
     farm_output = TransactionOutput(
         address=staking_address,
-        amount=Value(
-            coin=2000000, multi_asset=asset_from_token(farm_nft_token, 1)
-        ),
+        amount=Value(coin=2000000, multi_asset=asset_from_token(farm_nft_token, 1)),
         datum=staking_farm_datum,
     )
 
