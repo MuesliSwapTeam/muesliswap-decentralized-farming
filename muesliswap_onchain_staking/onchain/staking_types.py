@@ -103,5 +103,20 @@ class UnstakePosition(PlutusData):
     payment_output_index: int
 
 
-StakingRedeemer = Union[ApplyOrders, UpdateParams, UnstakePosition]
+@dataclass
+class MintApplyOrder(PlutusData):
+    CONSTR_ID = 3
+    farm_input_index: int
+    staking_position_output_index: int
+
+
+@dataclass
+class BurnNFT(PlutusData):
+    CONSTR_ID = 4
+
+
+StakingNFTRedeemer = Union[MintApplyOrder, BurnNFT]
 FarmRedeemer = Union[ApplyOrders, UpdateParams]
+StakingRedeemer = Union[
+    ApplyOrders, UpdateParams, UnstakePosition, MintApplyOrder, BurnNFT
+]

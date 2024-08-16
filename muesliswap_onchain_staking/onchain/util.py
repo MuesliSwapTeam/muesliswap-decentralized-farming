@@ -11,6 +11,8 @@ EMPTY_VALUE_DICT: Value = {}
 
 MAX_ADA_VALUE = 45_000_000_000_000_000
 
+STAKE_NFT_NAME = b"STAKE_FACTORY_NFT"
+
 
 def get_minting_purpose(context: ScriptContext) -> Minting:
     purpose = context.purpose
@@ -180,6 +182,16 @@ def check_correct_unstake_permission_nft(
         )
         == 1
     ), "Not exactly one unstake permission NFT in order input"
+
+
+def check_correct_stake_factory_nft(
+    order_input: TxOut,
+    stake_factory_nft_policy: PolicyId,
+) -> None:
+    assert (
+        amount_of_token_in_output(Token(stake_factory_nft_policy, STAKE_NFT_NAME), order_input)
+        == 1
+    ), "Not exactly one stake factory NFT in order input"
 
 
 def check_greater_or_equal_value(a: Value, b: Value) -> None:

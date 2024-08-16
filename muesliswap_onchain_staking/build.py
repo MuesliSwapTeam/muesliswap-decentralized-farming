@@ -11,7 +11,6 @@ from muesliswap_onchain_staking.onchain import (
     farm_nft,
     unstake_permission_nft,
     top_pools,
-    staking_nft,
 )
 from muesliswap_onchain_staking.utils.to_script_context import to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
@@ -94,14 +93,6 @@ def main():
     build_compressed(
         "spending",
         batching.__file__,
-        args=[
-            to_address(staking_address).to_cbor().hex(),
-        ],
-    )
-
-    build_compressed(
-        "minting",
-        staking_nft.__file__,
         args=[
             to_address(staking_address).to_cbor().hex(),
         ],
