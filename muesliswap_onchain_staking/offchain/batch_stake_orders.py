@@ -10,7 +10,9 @@ from muesliswap_onchain_staking.offchain.util import (
     sorted_utxos,
     amount_of_token_in_value,
     adjust_for_wrong_fee,
+    asset_from_script_hash,
 )
+from muesliswap_onchain_staking.onchain.util import STAKE_NFT_NAME
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -18,7 +20,9 @@ from pycardano import (
     Metadata,
     TransactionOutput,
     Redeemer,
+    Value,
 )
+from opshin.prelude import Token
 
 
 def main(
@@ -30,12 +34,17 @@ def main(
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
     )
-    _, _, staking_address = get_contract(module_name(staking), compressed=True)
+    _, staking_policy_id, staking_address = get_contract(
+        module_name(staking), compressed=True
+    )
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
+    assert (
+        len(batching_utxos) == 1
+    ), "Batching of multiple orders is not supported (yet)."
     staking_utxos = context.utxos(staking_address)
 
     staking_input = staking_utxos[0]
@@ -121,7 +130,10 @@ def main(
     staking_position_outputs = [
         TransactionOutput(
             address=staking_address,
-            amount=order_inputs[i][2].output.amount,
+            amount=order_inputs[i][2].output.amount
+            + Value(
+                multi_asset=asset_from_script_hash(staking_policy_id, STAKE_NFT_NAME, 1)
+            ),
             datum=d,
         )
         for i, d in enumerate(staking_position_datums)
@@ -140,6 +152,7 @@ def main(
         builder.add_output(with_min_lovelace(o, context))
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
+    builder.mint = asset_from_script_hash(staking_policy_id, STAKE_NFT_NAME, 1)
     # - add inputs
     for u in payment_utxos:
         builder.add_input(u)
@@ -157,6 +170,15 @@ def main(
             None,
             r,
         )
+    builder.add_minting_script(
+        staking_script,
+        Redeemer(
+            staking.MintApplyOrder(
+                farm_input_index=farm_input_index,
+                staking_position_output_index=1,  # assuming only one order, TODO: generalize
+            )
+        ),
+    )
 
     # sign the transaction
     signed_tx = builder.build_and_sign(
@@ -166,7 +188,7 @@ def main(
 
     # submit the transaction
     context.submit_tx(
-        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=150, output_offset=0)
+        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=150, output_offset=12_930)
     )
 
     show_tx(signed_tx)

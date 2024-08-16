@@ -2,7 +2,7 @@ from typing import List, Union
 
 import pycardano
 
-from opshin.prelude import Token
+from opshin.prelude import Token, TokenName
 from pycardano import (
     MultiAsset,
     ScriptHash,
@@ -29,6 +29,12 @@ def token_from_string(token: str) -> Token:
 def asset_from_token(token: Token, amount: int) -> MultiAsset:
     return MultiAsset(
         {ScriptHash(token.policy_id): Asset({AssetName(token.token_name): amount})}
+    )
+
+
+def asset_from_script_hash(script_hash: ScriptHash, token_name: TokenName, amount: int) -> MultiAsset:
+    return MultiAsset(
+        {script_hash: Asset({AssetName(token_name): amount})}
     )
 
 
