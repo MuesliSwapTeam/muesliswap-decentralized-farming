@@ -4,6 +4,11 @@ from muesliswap_onchain_staking.onchain import batching, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, to_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.offchain.util import (
+    token_from_string,
+    asset_from_token,
+    with_min_lovelace,
+)
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -12,12 +17,7 @@ from pycardano import (
     TransactionOutput,
     Value,
 )
-from opshin.prelude import Token, TokenName
-from util import (
-    token_from_string,
-    asset_from_token,
-    with_min_lovelace,
-)
+from opshin.prelude import Token
 
 
 def main(

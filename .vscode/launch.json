@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Place Stake Order",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.place_stake_order"
+        }, 
+        {
+            "name": "Cancel Stake Order",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.cancel_stake_order"
+        }, 
+        {
             "name": "Build Contracts",
             "type": "debugpy",
             "request": "launch",
