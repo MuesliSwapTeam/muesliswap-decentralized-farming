@@ -5,6 +5,12 @@ from muesliswap_onchain_staking.onchain import batching, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.offchain.util import (
+    with_min_lovelace,
+    sorted_utxos,
+    amount_of_token_in_value,
+    adjust_for_wrong_fee,
+)
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -12,12 +18,6 @@ from pycardano import (
     Metadata,
     TransactionOutput,
     Redeemer,
-)
-from util import (
-    with_min_lovelace,
-    sorted_utxos,
-    amount_of_token_in_value,
-    adjust_for_wrong_fee,
 )
 
 
@@ -38,14 +38,8 @@ def main(
     batching_utxos = context.utxos(batching_address)
     staking_utxos = context.utxos(staking_address)
 
-    print("farm UTxOs:", staking_utxos)
-    print("Batching UTxOs:", batching_utxos)
-
-    assert len(staking_utxos) == 1, "There should be exactly one farm UTxO."
     staking_input = staking_utxos[0]
-    prev_farm_datum = staking.FarmState.from_cbor(
-        staking_input.output.datum.cbor
-    )
+    prev_farm_datum = staking.FarmState.from_cbor(staking_input.output.datum.cbor)
 
     tx_inputs = sorted_utxos(batching_utxos + [staking_input] + payment_utxos)
     order_inputs = sorted(
@@ -85,6 +79,7 @@ def main(
             farm_input_index=farm_input_index,
             farm_output_index=0,
             order_input_indices=[o[0] for o in order_inputs],
+            staking_position_input_indices=[],
             order_output_indices=[i + 1 for i in range(len(order_inputs))],
             current_time=current_time,
         )
@@ -100,6 +95,7 @@ def main(
     )
     farm_datum = staking.FarmState(
         params=prev_farm_datum.params,
+        farm_type=prev_farm_datum.farm_type,
         emission_rates=prev_farm_datum.emission_rates,
         last_update_time=current_time,
         amount_staked=prev_farm_datum.amount_staked + total_amount_of_new_stake,
@@ -170,9 +166,7 @@ def main(
 
     # submit the transaction
     context.submit_tx(
-        adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=150, output_offset=86_200
-        )
+        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=150, output_offset=0)
     )
 
     show_tx(signed_tx)

@@ -9,19 +9,25 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muesliswap_onchain_staking.offchain.create_farm"
-        }, 
+        },
         {
             "name": "Place Stake Order",
             "type": "debugpy",
             "request": "launch",
             "module": "muesliswap_onchain_staking.offchain.place_stake_order"
-        }, 
+        },
         {
             "name": "Cancel Stake Order",
             "type": "debugpy",
             "request": "launch",
             "module": "muesliswap_onchain_staking.offchain.cancel_stake_order"
-        }, 
+        },
+        {
+            "name": "Batch Stake Orders",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.batch_stake_orders"
+        },
         {
             "name": "Build Contracts",
             "type": "debugpy",
