@@ -15,6 +15,10 @@ from muesliswap_onchain_staking.utils import (
     to_tx_out_ref,
 )
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.offchain.util import (
+    asset_from_token,
+    with_min_lovelace,
+)
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -23,12 +27,9 @@ from pycardano import (
     TransactionOutput,
     Value,
     TransactionInput,
+    Redeemer,
 )
-from opshin.prelude import Token, TokenName
-from util import (
-    asset_from_token,
-    with_min_lovelace,
-)
+from opshin.prelude import Token
 
 
 def main(
@@ -36,9 +37,7 @@ def main(
 ):
     _, _, stake_order_batching = get_contract(module_name(batching), compressed=True)
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
-    _, farm_nft_script_hash, _ = get_contract(
-        module_name(farm_nft), compressed=True
-    )
+    _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
     unstake_permission_nft_script, unstake_permission_nft_pid, _ = get_contract(
         module_name(unstake_permission_nft), compressed=True
     )
@@ -55,7 +54,7 @@ def main(
 
     unstake_order_datum = batching.UnstakeOrder(
         owner=to_address(payment_address),
-        staking_position_input=to_tx_out_ref(
+        staking_position=to_tx_out_ref(
             TransactionInput(
                 transaction_id=staking_position_input.input.transaction_id,
                 index=staking_position_input.input.index,
@@ -64,7 +63,7 @@ def main(
     )
     permission_nft_redeemer = UnstakeOrder(
         owner=unstake_order_datum.owner,
-        staking_position_input=unstake_order_datum.staking_position_input,
+        staking_position=unstake_order_datum.staking_position,
     )
 
     # build the transaction
@@ -79,12 +78,7 @@ def main(
     permission_nft_asset = asset_from_token(
         Token(
             policy_id=unstake_permission_nft_pid.payload,
-            token_name=unstake_permission_nft_token_name(
-                UnstakeOrder(
-                    owner=unstake_order_datum.owner,
-                    staking_position_input=unstake_order_datum.staking_position_input,
-                ),
-            ),
+            token_name=unstake_permission_nft_token_name(permission_nft_redeemer),
         ),
         1,
     )
@@ -97,7 +91,9 @@ def main(
     builder.add_output(with_min_lovelace(stake_order_output, context))
     builder.ttl = context.last_block_slot + 100
     builder.mint = permission_nft_asset
-    builder.add_minting_script(unstake_permission_nft_script, permission_nft_redeemer)
+    builder.add_minting_script(
+        unstake_permission_nft_script, Redeemer(permission_nft_redeemer)
+    )
 
     # sign the transaction
     signed_tx = builder.build_and_sign(

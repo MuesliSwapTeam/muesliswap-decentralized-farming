@@ -5,6 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "muesliswap_onchain_staking.api.server:app",
+                "--host",
+                "localhost",
+                "--port",
+                "8008"
+            ],
+            "jinja": true
+        },
+        {
+            "name": "Run Chain Querier",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.api.chain_querier"
+        },
+        {
             "name": "Create Farm",
             "type": "debugpy",
             "request": "launch",
@@ -27,6 +47,18 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muesliswap_onchain_staking.offchain.batch_stake_orders"
+        },
+        {
+            "name": "Place Unstake Order",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.place_unstake_order"
+        },
+        {
+            "name": "Batch Unstake Orders",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muesliswap_onchain_staking.offchain.batch_unstake_orders"
         },
         {
             "name": "Build Contracts",

@@ -10,7 +10,7 @@ from muesliswap_onchain_staking.api.tx_processor import process_tx
 
 from ..utils.network import ogmios_url
 from . import ogmios_iterator
-from .db_models import Block, GovState, TransactionOutput, TreasurerState
+from .db_models import Block, TransactionOutput
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(
@@ -57,16 +57,16 @@ def main(rollback_to_slot: int = None, debug_sql: bool = False):
                 _LOGGER.info(f"Rollback to tip {str(operation.tip)}")
                 Block.delete().where(Block.slot > operation.tip.slot).execute()
                 # At least one Rollback is executed once after each restart, so we can be sure this is initialized correctly
-                tracked_gov_states = list(
-                    GovState.select()
-                    .join(TransactionOutput)
-                    .where(TransactionOutput.spent_in_block.is_null())
-                )
-                tracked_treasury_states = list(
-                    TreasurerState.select()
-                    .join(TransactionOutput)
-                    .where(TransactionOutput.spent_in_block.is_null())
-                )
+                #                tracked_gov_states = list(
+                #                    GovState.select()
+                #                    .join(TransactionOutput)
+                #                    .where(TransactionOutput.spent_in_block.is_null())
+                #                )
+                #                tracked_treasury_states = list(
+                #                    TreasurerState.select()
+                #                    .join(TransactionOutput)
+                #                    .where(TransactionOutput.spent_in_block.is_null())
+                #                )
                 continue
         else:
             block = ogmios_iterator.tip_from_block(operation.block)
@@ -76,7 +76,10 @@ def main(rollback_to_slot: int = None, debug_sql: bool = False):
                 _LOGGER.info(f"Processing block {block.id}")
                 for i, tx in enumerate(ogmios_iterator.txs_from_block(operation.block)):
                     process_tx(
-                        tx, db_block, i, tracked_gov_states, tracked_treasury_states
+                        tx,
+                        db_block,
+                        i,
+                        # tracked_gov_states, tracked_treasury_states
                     )
             except Exception as e:
                 _LOGGER.info(f"Error processing block {block.id}: {e}")

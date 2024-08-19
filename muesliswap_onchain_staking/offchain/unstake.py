@@ -6,6 +6,13 @@ from muesliswap_onchain_staking.onchain.util import floor_scale_fraction
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, from_address
 from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.offchain.util import (
+    with_min_lovelace,
+    sorted_utxos,
+    amount_of_token_in_value,
+    asset_from_token,
+    adjust_for_wrong_fee,
+)
 from pycardano import (
     TransactionBuilder,
     AuxiliaryData,
@@ -15,14 +22,6 @@ from pycardano import (
     Redeemer,
     Value,
 )
-from opshin.std.fractions import sub_fraction
-from util import (
-    with_min_lovelace,
-    sorted_utxos,
-    amount_of_token_in_value,
-    asset_from_token,
-    adjust_for_wrong_fee,
-)
 
 
 def main(
@@ -31,9 +30,7 @@ def main(
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
     )
-    _, farm_nft_script_hash, _ = get_contract(
-        module_name(farm_nft), compressed=True
-    )
+    _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
 
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
@@ -47,9 +44,7 @@ def main(
 
     staking_input = staking_utxos[0 if farm_input == staking_utxos[1] else 1]
 
-    prev_farm_datum = staking.FarmState.from_cbor(
-        farm_input.output.datum.cbor
-    )
+    prev_farm_datum = staking.FarmState.from_cbor(farm_input.output.datum.cbor)
     staking_position_datum = staking.StakingPosition.from_cbor(
         staking_input.output.datum.cbor
     )
@@ -65,7 +60,7 @@ def main(
 
     # construct redeemers
     farm_unstake_redeemer = Redeemer(
-        staking.UnstakeState(
+        staking.UnstakePosition(
             farm_input_index=farm_input_index,
             farm_output_index=0,
             staking_position_input_index=staking_position_input_index,
@@ -117,9 +112,7 @@ def main(
     reward_value = sum(
         [
             Value(multi_asset=asset_from_token(tk, am))
-            for tk, am in zip(
-                prev_farm_datum.params.reward_tokens, reward_amounts
-            )
+            for tk, am in zip(prev_farm_datum.params.reward_tokens, reward_amounts)
         ],
         Value(),
     )

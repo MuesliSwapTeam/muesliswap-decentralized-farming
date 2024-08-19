@@ -1,7 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, List
-from enum import Enum
+from typing import Any
 
 from fastapi import Query, FastAPI
 from fastapi.responses import ORJSONResponse
@@ -12,9 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from muesliswap_onchain_staking.api.db_models import db
 
-# from muesliswap_onchain_staking.api.db_queries import (
-#     # TODO
-# )
+from muesliswap_onchain_staking.api.db_queries import *
 
 # logger setup
 _LOGGER = logging.getLogger(__name__)
@@ -206,18 +203,12 @@ def health():
     )
 
 
-# @app.get("/api/v1/staking/positions")
-# def staking_positions(
-#     wallet: str = WalletQuery,
-# ):
-#     """
-#     Get the currently open staking positions for a wallet.
-#     """
-#     return ORJSONResponse(
-#         add_token_details_and_timestamps(
-#             staking.query_staking_positions_per_wallet(wallet)
-#         )
-#     )
+@app.get("/api/v1/farms")
+def farms():
+    """
+    Get all farms.
+    """
+    return ORJSONResponse(query_farms())
 
 
 # for debugging

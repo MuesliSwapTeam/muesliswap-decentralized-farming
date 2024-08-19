@@ -1,6 +1,7 @@
 from typing import Union
 
 import cbor2
+import datetime
 
 import pycardano
 from opshin import prelude
@@ -117,3 +118,10 @@ def add_output(
                 transaction_output=output, token=token, amount=amount
             )
     return output
+
+
+def to_datetime(timestamp: int) -> datetime.datetime:
+    """
+    Convert a timestamp to a datetime object.
+    """
+    return datetime.datetime.fromtimestamp(timestamp / 1000)

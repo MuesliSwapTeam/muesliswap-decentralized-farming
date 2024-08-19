@@ -11,7 +11,7 @@ EMPTY_VALUE_DICT: Value = {}
 
 MAX_ADA_VALUE = 45_000_000_000_000_000
 
-STAKE_NFT_NAME = b"STAKE_FACTORY_NFT"
+STAKE_NFT_NAME = b"STAKE_FACTORY"
 
 
 def get_minting_purpose(context: ScriptContext) -> Minting:
