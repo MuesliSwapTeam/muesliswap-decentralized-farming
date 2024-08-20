@@ -3,7 +3,7 @@ from pycardano import Network
 from ..utils.contracts import module_name
 from ..utils import network, contracts
 
-from ..onchain import unstake_permission_nft, farm_nft
+from ..onchain import unstake_permission_nft, farm_nft, staking
 
 # Only these scripts need to be hardcoded
 # And should also change seldomly
@@ -12,6 +12,9 @@ _, unstake_permission_nft_policy_id, _ = contracts.get_contract(
 )
 _, farm_nft_policy_id, _ = contracts.get_contract(
     module_name(farm_nft), compressed=True
+)
+_, _, staking_address = contracts.get_contract(
+    module_name(staking), compressed=True
 )
 
 # default: start from a block around 19 feb 2024
