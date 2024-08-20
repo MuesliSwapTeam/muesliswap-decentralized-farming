@@ -18,9 +18,9 @@ _, _, staking_address = contracts.get_contract(
 )
 
 # default: start from a block around 19 feb 2024
-START_BLOCK_SLOT = 	68_140_290 if network == Network.TESTNET else 125_125_931
+START_BLOCK_SLOT = 68_140_523 if network == Network.TESTNET else 125_125_931
 START_BLOCK_HASH = (
-    "9e4623ff2713164b7d950cff69b596f9cd4e8b95de28b6bc6e28d64ee2db7872"
+    "a428110ff5024d82ea02020ec66581ff8ac7da2ca0fe702c27d3d98daa7bc6d6"
     if network == Network.TESTNET
     else "bde676ad40372bde8cd778c035ac606976c07ec7dde261f313f3ea39cc196c74"
 )

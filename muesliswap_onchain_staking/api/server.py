@@ -211,6 +211,14 @@ def farms():
     return ORJSONResponse(query_farms())
 
 
+@app.get("/api/v1/staking/positions")
+def staking_positions(wallet: str = WalletQuery):
+    """
+    Get all staking positions for a wallet.
+    """
+    return ORJSONResponse(query_staking_positions_per_wallet(wallet))
+
+
 # for debugging
 if __name__ == "__main__":
     import uvicorn
