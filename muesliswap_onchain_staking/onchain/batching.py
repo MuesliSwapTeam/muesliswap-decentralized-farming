@@ -6,7 +6,7 @@ from muesliswap_onchain_staking.onchain.staking_types import *
 # VALIDATOR ############################################################################################################
 def validator(
     staking_address: Address,
-    datum: StakeOrder,
+    datum: OrderDatum,
     redeemer: BatchingRedeemer,
     context: ScriptContext,
 ) -> None:
@@ -20,16 +20,22 @@ def validator(
         staking_position_output = tx_info.outputs[
             redeemer.staking_position_output_index
         ]
-        assert (
-            staking_position_output.address == staking_address
-        ), "Stake not going to staking contract."
-        staking_datum: StakingPosition = resolve_datum_unsafe(
-            staking_position_output, tx_info
-        )
-        assert (
-            staking_datum.batching_output_index
-            == redeemer.staking_position_output_index
-        ), "Invalid batching output index provided."
+
+        if isinstance(datum, StakeOrder):
+            assert (
+                staking_position_output.address == staking_address
+            ), "Stake not going to staking contract."
+            staking_datum: StakingPosition = resolve_datum_unsafe(
+                staking_position_output, tx_info
+            )
+            assert (
+                staking_datum.batching_output_index
+                == redeemer.staking_position_output_index
+            ), "Invalid batching output index provided."
+        elif isinstance(datum, UnstakeOrder):
+            pass
+        else:
+            assert False, "Invalid datum type."
 
     elif isinstance(redeemer, CancelOrder):
         assert user_signed_tx(

@@ -23,6 +23,8 @@ class UnstakeOrder(PlutusData):
     owner: Address
     staking_position: TxOutRef
 
+OrderDatum = Union[StakeOrder, UnstakeOrder]
+
 
 # REDEEMERS ############################################################################################################
 @dataclass
