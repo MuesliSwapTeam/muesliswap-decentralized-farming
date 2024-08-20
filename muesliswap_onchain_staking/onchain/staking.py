@@ -263,7 +263,7 @@ def validator(
                         no_unstakes += 1
 
                         assert (
-                            od.staking_position == tx_info.inputs[in_idx]
+                            od.staking_position == tx_info.inputs[in_idx].out_ref
                         ), "Invalid reference to staking position."
                         assert (
                             staking_position_input.address == address
