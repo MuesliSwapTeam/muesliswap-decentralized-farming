@@ -25,7 +25,7 @@ def process_tx(
     ]
     for h, i in spent_inputs:
         TransactionOutput.update(spent_in_block=block).where(
-            (TransactionOutput.transaction_hash == h) & (TransactionOutput.index == i)
+            (TransactionOutput.transaction_hash == h) & (TransactionOutput.output_index == i)
         ).execute()
 
     # model specific processing
