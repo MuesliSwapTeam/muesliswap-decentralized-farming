@@ -11,6 +11,7 @@ from muesliswap_onchain_staking.offchain.util import (
     amount_of_token_in_value,
     adjust_for_wrong_fee,
     asset_from_script_hash,
+    asset_from_token,
 )
 from muesliswap_onchain_staking.onchain.util import STAKE_NFT_NAME
 from pycardano import (
@@ -149,6 +150,20 @@ def main(
     builder.add_output(with_min_lovelace(farm_output, context))
     for o in staking_position_outputs:
         builder.add_output(with_min_lovelace(o, context))
+    # balance output (somehow pycardano doesn't...?)
+    builder.add_output(
+        with_min_lovelace(
+            TransactionOutput(
+                address=payment_address,
+                amount=Value(
+                    multi_asset=asset_from_token(
+                        prev_farm_datum.params.stake_token, 510_000
+                    )
+                ),
+            ),
+            context,
+        )
+    )
     builder.validity_start = context.last_block_slot - 50
     builder.ttl = context.last_block_slot + 100
     builder.mint = asset_from_script_hash(staking_policy_id, STAKE_NFT_NAME, 1)
@@ -187,7 +202,9 @@ def main(
 
     # submit the transaction
     context.submit_tx(
-        adjust_for_wrong_fee(signed_tx, [payment_skey], fee_offset=150, output_offset=12_930)
+        adjust_for_wrong_fee(
+            signed_tx, [payment_skey], fee_offset=150, output_offset=12_930
+        )
     )
 
     show_tx(signed_tx)
