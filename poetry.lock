@@ -570,24 +570,25 @@ files = [
 
 [[package]]
 name = "docker"
-version = "6.1.3"
+version = "7.1.0"
 description = "A Python library for the Docker Engine API."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "docker-6.1.3-py3-none-any.whl", hash = "sha256:aecd2277b8bf8e506e484f6ab7aec39abe0038e29fa4a6d3ba86c3fe01844ed9"},
-    {file = "docker-6.1.3.tar.gz", hash = "sha256:aa6d17830045ba5ef0168d5eaa34d37beeb113948c413affe1d5991fc11f9a20"},
+    {file = "docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0"},
+    {file = "docker-7.1.0.tar.gz", hash = "sha256:ad8c70e6e3f8926cb8a92619b832b4ea5299e2831c14284663184e200546fa6c"},
 ]
 
 [package.dependencies]
-packaging = ">=14.0"
 pywin32 = {version = ">=304", markers = "sys_platform == \"win32\""}
 requests = ">=2.26.0"
 urllib3 = ">=1.26.0"
-websocket-client = ">=0.32.0"
 
 [package.extras]
+dev = ["coverage (==7.2.7)", "pytest (==7.4.2)", "pytest-cov (==4.1.0)", "pytest-timeout (==2.1.0)", "ruff (==0.1.8)"]
+docs = ["myst-parser (==0.18.0)", "sphinx (==5.1.1)"]
 ssh = ["paramiko (>=2.4.3)"]
+websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "ecdsa"
@@ -634,22 +635,22 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastapi"
-version = "0.109.2"
+version = "0.110.3"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.109.2-py3-none-any.whl", hash = "sha256:2c9bab24667293b501cad8dd388c05240c850b58ec5876ee3283c47d6e1e3a4d"},
-    {file = "fastapi-0.109.2.tar.gz", hash = "sha256:f3817eac96fe4f65a2ebb4baa000f394e55f5fccdaf7f75250804bc58f354f73"},
+    {file = "fastapi-0.110.3-py3-none-any.whl", hash = "sha256:fd7600612f755e4050beb74001310b5a7e1796d149c2ee363124abdfa0289d32"},
+    {file = "fastapi-0.110.3.tar.gz", hash = "sha256:555700b0159379e94fdbfc6bb66a0f1c43f4cf7060f25239af3d84b63a656626"},
 ]
 
 [package.dependencies]
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
-starlette = ">=0.36.3,<0.37.0"
+starlette = ">=0.37.2,<0.38.0"
 typing-extensions = ">=4.8.0"
 
 [package.extras]
-all = ["email-validator (>=2.0.0)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.7)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
+all = ["email_validator (>=2.0.0)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.7)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
 
 [[package]]
 name = "fastapi-cache2"
@@ -692,12 +693,12 @@ typing = ["typing-extensions (>=4.12.2)"]
 
 [[package]]
 name = "fire"
-version = "0.5.0"
+version = "0.6.0"
 description = "A library for automatically generating command line interfaces."
 optional = false
 python-versions = "*"
 files = [
-    {file = "fire-0.5.0.tar.gz", hash = "sha256:a6b0d49e98c8963910021f92bba66f65ab440da2982b78eb1bbf95a0a34aacc6"},
+    {file = "fire-0.6.0.tar.gz", hash = "sha256:54ec5b996ecdd3c0309c800324a0703d6da512241bc73b553db959d98de0aa66"},
 ]
 
 [package.dependencies]
@@ -973,13 +974,13 @@ files = [
 
 [[package]]
 name = "mnemonic"
-version = "0.20"
+version = "0.21"
 description = "Implementation of Bitcoin BIP-0039"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.8.1"
 files = [
-    {file = "mnemonic-0.20-py3-none-any.whl", hash = "sha256:acd2168872d0379e7a10873bb3e12bf6c91b35de758135c4fbd1015ef18fafc5"},
-    {file = "mnemonic-0.20.tar.gz", hash = "sha256:7c6fb5639d779388027a77944680aee4870f0fcd09b1e42a5525ee2ce4c625f6"},
+    {file = "mnemonic-0.21-py3-none-any.whl", hash = "sha256:72dc9de16ec5ef47287237b9b6943da11647a03fe7cf1f139fc3d7c4a7439288"},
+    {file = "mnemonic-0.21.tar.gz", hash = "sha256:1fe496356820984f45559b1540c80ff10de448368929b9c60a2b55744cc88acf"},
 ]
 
 [[package]]
@@ -1006,10 +1007,10 @@ files = [
 
 [[package]]
 name = "ogmios"
-version = "1.0.5"
+version = "1.2.1"
 description = "Ogmios is a lightweight bridge interface for cardano-node. It offers a WebSockets API that enables local clients to speak Ouroboros' mini-protocols via JSON/RPC. ogmios-python is an Ogmios client written in Python designed for ease of use."
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.8"
 files = []
 develop = false
 
@@ -1018,37 +1019,37 @@ cachetools = "*"
 cardano-tools = "*"
 coloredlogs = "*"
 orjson = "*"
-pycardano = "*"
 pydantic = ">=2.0"
+setuptools = ">=69.5.1"
 websockets = "*"
 
 [package.extras]
 dev = ["black", "datamodel-code-generator", "flake8-pyproject", "isort", "sphinx", "sphinx-rtd-theme"]
-testing = ["coverage[toml] (>=6.5)", "pytest"]
+testing = ["coverage[toml] (>=6.5)", "pycardano", "pytest"]
 
 [package.source]
 type = "git"
-url = "https://gitlab.com/nielstron/ogmios-python.git"
-reference = "running_fixes"
-resolved_reference = "d0bacaaff08a9ed64850e82707224e22301c71c0"
+url = "https://gitlab.com/viperscience/ogmios-python.git"
+reference = "HEAD"
+resolved_reference = "6cb1b913d72f8c3da4eb72824354c50420f0ec14"
 
 [[package]]
 name = "opshin"
-version = "0.20.0"
+version = "0.23.0"
 description = "A simple pythonic programming language for Smart Contracts on Cardano"
 optional = false
-python-versions = ">=3.8,<3.12"
+python-versions = "<3.12,>=3.8.1"
 files = [
-    {file = "opshin-0.20.0-py3-none-any.whl", hash = "sha256:717c393fbf7212fc2a8010112086fb64248bcc7f2af41c79cddc860cffdcc93c"},
-    {file = "opshin-0.20.0.tar.gz", hash = "sha256:4e77fa9c8094e297a6f2e9814f1e494b66e7cba8d2b07d1307a13154be2ed8e7"},
+    {file = "opshin-0.23.0-py3-none-any.whl", hash = "sha256:bc87837dacfb6400339d0585dbd334968a1ef66268bab8d6d5b43bba189b68fb"},
+    {file = "opshin-0.23.0.tar.gz", hash = "sha256:73cba8c99c934119cd1ac683a860f963eda834ce2d93b4757ede4b6f158df659"},
 ]
 
 [package.dependencies]
 frozenlist2 = ">=1.0.0,<2.0.0"
 ordered-set = ">=4.1.0,<5.0.0"
-pluthon = ">=0.4.5,<0.5.0"
-pycardano = ">=0.10.0,<0.11.0"
-uplc = ">=0.6.9,<0.7.0"
+pluthon = ">=1.0.0,<2.0.0"
+pycardano = ">=0.11.1,<0.12.0"
+uplc = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "ordered-set"
@@ -1323,18 +1324,18 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluthon"
-version = "0.4.10"
+version = "1.0.0"
 description = "Pluto-like programming language for Cardano Smart Contracts in Python"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "pluthon-0.4.10-py3-none-any.whl", hash = "sha256:bf61cb58d427f999270660923a5cffe65334d9e6d7f167cf5595f410f0e5ec00"},
-    {file = "pluthon-0.4.10.tar.gz", hash = "sha256:88fe6947066d87e2fb956b54df15921e4438436edecf0fa18eb2926443f26eeb"},
+    {file = "pluthon-1.0.0-py3-none-any.whl", hash = "sha256:cb0bfef3b56f62551c7ccbb26a13ac9aaacb88faaa07351312739b0722d217ef"},
+    {file = "pluthon-1.0.0.tar.gz", hash = "sha256:57ff4e8d24adc24d33098324e984f9abb723a4847e38e7c79d7a96ce6dd434b2"},
 ]
 
 [package.dependencies]
 ordered-set = ">=4.1.0,<5.0.0"
-uplc = ">=0.6.2,<0.7.0"
+uplc = ">=1.0.0,<1.1.0"
 
 [[package]]
 name = "pprintpp"
@@ -1378,10 +1379,10 @@ files = [
 
 [[package]]
 name = "pycardano"
-version = "0.10.0"
+version = "0.11.1"
 description = "A Cardano library in Python"
 optional = false
-python-versions = "^3.7"
+python-versions = "^3.8.1"
 files = []
 develop = false
 
@@ -1390,21 +1391,24 @@ blockfrost-python = "0.5.3"
 cachetools = "^5.3.0"
 cbor2 = "^5.4.3"
 cose = "0.9.dev8"
-docker = "^6.1.3"
+docker = "^7.1.0"
 ECPy = "^1.2.5"
 frozendict = "^2.3.8"
 frozenlist = "^1.3.3"
-mnemonic = "^0.20"
+mnemonic = "^0.21"
+ogmios = {git = "https://gitlab.com/viperscience/ogmios-python.git"}
 pprintpp = "^0.4.0"
 PyNaCl = "^1.5.0"
-typeguard = "^2.13.3"
+requests = "^2.32.3"
+typeguard = "^4.3.0"
 websocket-client = "^1.4.1"
+websockets = "^13.0"
 
 [package.source]
 type = "git"
-url = "https://github.com/OpShin/pycardano"
+url = "https://github.com/MuesliSwapLabs/pycardano.git"
 reference = "running_fixes"
-resolved_reference = "9c2d1d4fc8079f303c0d7d8740915087f7a14278"
+resolved_reference = "23cbc6a82ca273f3659a5b9e2b52439c9c609e6f"
 
 [[package]]
 name = "pycparser"
@@ -1753,6 +1757,26 @@ files = [
 appdirs = "*"
 
 [[package]]
+name = "setuptools"
+version = "74.1.3"
+description = "Easily download, build, install, upgrade, and uninstall Python packages"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "setuptools-74.1.3-py3-none-any.whl", hash = "sha256:1cfd66bfcf197bce344da024c8f5b35acc4dcb7ca5202246a75296b4883f6851"},
+    {file = "setuptools-74.1.3.tar.gz", hash = "sha256:fbb126f14b0b9ffa54c4574a50ae60673bbe8ae0b1645889d10b3b14f5891d28"},
+]
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)", "ruff (>=0.5.2)"]
+core = ["importlib-metadata (>=6)", "importlib-resources (>=5.10.2)", "jaraco.text (>=3.7)", "more-itertools (>=8.8)", "packaging (>=24)", "platformdirs (>=2.6.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
+enabler = ["pytest-enabler (>=2.2)"]
+test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
+type = ["importlib-metadata (>=7.0.2)", "jaraco.develop (>=7.21)", "mypy (==1.11.*)", "pytest-mypy"]
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -1787,13 +1811,13 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.36.3"
+version = "0.37.2"
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "starlette-0.36.3-py3-none-any.whl", hash = "sha256:13d429aa93a61dc40bf503e8c801db1f1bca3dc706b10ef2434a36123568f044"},
-    {file = "starlette-0.36.3.tar.gz", hash = "sha256:90a671733cfb35771d8cc605e0b679d23b992f8dcfad48cc60b38cb29aeb7080"},
+    {file = "starlette-0.37.2-py3-none-any.whl", hash = "sha256:6fe59f29268538e5d0d182f2791a479a0c64638e6935d1c6989e63fb2699c6ee"},
+    {file = "starlette-0.37.2.tar.gz", hash = "sha256:9af890290133b79fc3db55474ade20f6220a364a0402e0b556e7cd5e1e093823"},
 ]
 
 [package.dependencies]
@@ -1829,18 +1853,21 @@ files = [
 
 [[package]]
 name = "typeguard"
-version = "2.13.3"
+version = "4.4.1"
 description = "Run-time type checker for Python"
 optional = false
-python-versions = ">=3.5.3"
+python-versions = ">=3.9"
 files = [
-    {file = "typeguard-2.13.3-py3-none-any.whl", hash = "sha256:5e3e3be01e887e7eafae5af63d1f36c849aaa94e3a0112097312aabfa16284f1"},
-    {file = "typeguard-2.13.3.tar.gz", hash = "sha256:00edaa8da3a133674796cf5ea87d9f4b4c367d77476e185e80251cc13dfbb8c4"},
+    {file = "typeguard-4.4.1-py3-none-any.whl", hash = "sha256:9324ec07a27ec67fc54a9c063020ca4c0ae6abad5e9f0f9804ca59aee68c6e21"},
+    {file = "typeguard-4.4.1.tar.gz", hash = "sha256:0d22a89d00b453b47c49875f42b6601b961757541a2e1e0ef517b6e24213c21b"},
 ]
 
+[package.dependencies]
+typing-extensions = ">=4.10.0"
+
 [package.extras]
-doc = ["sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
-test = ["mypy", "pytest", "typing-extensions"]
+doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme (>=1.3.0)"]
+test = ["coverage[toml] (>=7)", "mypy (>=1.2.0)", "pytest (>=7)"]
 
 [[package]]
 name = "typing-extensions"
@@ -1866,20 +1893,20 @@ files = [
 
 [[package]]
 name = "uplc"
-version = "0.6.9"
+version = "1.0.7"
 description = "Python implementation of untyped plutus language core"
 optional = false
-python-versions = ">=3.8,<3.12"
+python-versions = "<3.12,>=3.8"
 files = [
-    {file = "uplc-0.6.9-py3-none-any.whl", hash = "sha256:1815aef89ce5f169ef7ebc2ea4090e488fb4d84785a41c16e1114a0a73cea996"},
-    {file = "uplc-0.6.9.tar.gz", hash = "sha256:a4f3990d9a009718e719d33d03e448946b195b0c31d9bd4700df85c13b384616"},
+    {file = "uplc-1.0.7-py3-none-any.whl", hash = "sha256:ad6f08473c5b7bf9d2c9e1d083bcafe3bfd5eac6670f826ed6cd77c535b7e718"},
+    {file = "uplc-1.0.7.tar.gz", hash = "sha256:63b51e0ccbf87f18a1d56ae53fae4312bc989b73f20cc82ec22f2ad06bd14be0"},
 ]
 
 [package.dependencies]
 cbor2 = ">=5.4.6,<6.0.0"
 frozendict = ">=2.3.8,<3.0.0"
-frozenlist = ">=1.3.3,<2.0.0"
-pycardano = ">=0.10.0,<0.11.0"
+frozenlist2 = ">=1.0.0,<2.0.0"
+pycardano = ">=0.9.0,<0.13.0"
 python-secp256k1-cardano = ">=0.2.3,<0.3.0"
 rply = ">=0.7.8,<0.8.0"
 
@@ -1902,13 +1929,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "uvicorn"
-version = "0.27.1"
+version = "0.29.0"
 description = "The lightning-fast ASGI server."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "uvicorn-0.27.1-py3-none-any.whl", hash = "sha256:5c89da2f3895767472a35556e539fd59f7edbe9b1e9c0e1c99eebeadc61838e4"},
-    {file = "uvicorn-0.27.1.tar.gz", hash = "sha256:3d9a267296243532db80c83a959a3400502165ade2c1338dea4e67915fd4745a"},
+    {file = "uvicorn-0.29.0-py3-none-any.whl", hash = "sha256:2c2aac7ff4f4365c206fd773a39bf4ebd1047c238f8b8268ad996829323473de"},
+    {file = "uvicorn-0.29.0.tar.gz", hash = "sha256:6a69214c0b6a087462412670b3ef21224fa48cae0e452b5883e8e8bdfdd11dd0"},
 ]
 
 [package.dependencies]
@@ -2053,4 +2080,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10, <3.12"
-content-hash = "6493f90902a4a81efa9b4b1c9ca311d7e03462531d463d82a01305da04f3f587"
+content-hash = "a59ce23c3575182209ba1d51a0df6ccfcabac6b33235497ec05edff187cd501f"

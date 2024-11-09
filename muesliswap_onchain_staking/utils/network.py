@@ -1,10 +1,9 @@
 import os
 
 import blockfrost
-import ogmios
-
 import pycardano
-from pycardano import Network, OgmiosChainContext
+from pycardano import Network
+from pycardano.backend.ogmios_v6 import OgmiosV6ChainContext
 
 ogmios_host = os.getenv("OGMIOS_API_HOST", "localhost")
 ogmios_port = os.getenv("OGMIOS_API_PORT", "1338")
@@ -23,25 +22,25 @@ network = Network.TESTNET
 blockfrost_project_id = os.getenv("BLOCKFROST_PROJECT_ID", None)
 blockfrost_client = blockfrost.BlockFrostApi(
     blockfrost_project_id,
-    base_url=blockfrost.ApiUrls.mainnet.value
-    if network == Network.MAINNET
-    else blockfrost.ApiUrls.preprod.value,
+    base_url=(
+        blockfrost.ApiUrls.mainnet.value
+        if network == Network.MAINNET
+        else blockfrost.ApiUrls.preprod.value
+    ),
 )
 
 
 # Load chain context
 try:
-    context = OgmiosChainContext(ogmios_url, network=network, kupo_url=kupo_url)
-except Exception:
-    try:
-        context = ogmios.OgmiosChainContext(
-            host=ogmios_host,
-            port=int(ogmios_port),
-            secure=ogmios_protocol == "wss",
-        )
-    except Exception as e:
-        print("No ogmios available")
-        context = None
+    context = OgmiosV6ChainContext(
+        host=ogmios_host,
+        port=int(ogmios_port),
+        secure=ogmios_protocol == "wss",
+        network=network,
+    )
+except Exception as e:
+    print("No ogmios available")
+    context = None
 
 
 def show_tx(signed_tx: pycardano.Transaction):
