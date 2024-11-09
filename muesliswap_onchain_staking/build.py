@@ -86,7 +86,7 @@ def main():
                 PlutusByteString(unstake_permission_nft_script_hash.payload)
             ).hex(),
         ],
-        cli_options=("--cf", "--allow-isinstance-anything", "--force-three-params"),
+        cli_options=("-fconstant-folding", "-fallow-isinstance-anything", "-fforce-three-params"),
     )
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
 

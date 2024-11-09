@@ -110,7 +110,7 @@ def validator(
                 tx_info.mint, purpose.policy_id, STAKE_NFT_NAME
             )
 
-            # TODO: check time etc. of initialization -> probably not necessary since already checked in farm/staking contract (which we ensure above is spent)
+            # TODO: check time etc. of initialization -> not necessary since already checked in farm/staking contract (which we ensure above is spent)
         else:
             assert False, "Invalid redeemer type."
 
@@ -323,7 +323,7 @@ def validator(
                 only_one_input_from_address(address, tx_info.inputs)
 
             else:
-                assert False, "Invalid redeemer."
+                assert False, "Invalid redeemer provided."
 
             # in any case, check that cumulative reward per token is updated correctly
             desired_next_state = FarmState(

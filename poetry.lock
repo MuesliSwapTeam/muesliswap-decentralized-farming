@@ -1035,21 +1035,21 @@ resolved_reference = "6cb1b913d72f8c3da4eb72824354c50420f0ec14"
 
 [[package]]
 name = "opshin"
-version = "0.23.0"
+version = "0.22.0"
 description = "A simple pythonic programming language for Smart Contracts on Cardano"
 optional = false
 python-versions = "<3.12,>=3.8.1"
 files = [
-    {file = "opshin-0.23.0-py3-none-any.whl", hash = "sha256:bc87837dacfb6400339d0585dbd334968a1ef66268bab8d6d5b43bba189b68fb"},
-    {file = "opshin-0.23.0.tar.gz", hash = "sha256:73cba8c99c934119cd1ac683a860f963eda834ce2d93b4757ede4b6f158df659"},
+    {file = "opshin-0.22.0-py3-none-any.whl", hash = "sha256:9a2bba99b77b0cca587cdc794a01c82945a5eee8300290b3a49c4fdadacc935b"},
+    {file = "opshin-0.22.0.tar.gz", hash = "sha256:48ba0cfad856aa27246a1d719cb9cdc977641d43a4f7fba2bf303e35cbdb8ecf"},
 ]
 
 [package.dependencies]
 frozenlist2 = ">=1.0.0,<2.0.0"
 ordered-set = ">=4.1.0,<5.0.0"
-pluthon = ">=1.0.0,<2.0.0"
+pluthon = ">=0.5.4,<0.6.0"
 pycardano = ">=0.11.1,<0.12.0"
-uplc = ">=1.0.6,<2.0.0"
+uplc = ">=0.6.10,<0.7.0"
 
 [[package]]
 name = "ordered-set"
@@ -1324,18 +1324,18 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluthon"
-version = "1.0.0"
+version = "0.5.4"
 description = "Pluto-like programming language for Cardano Smart Contracts in Python"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "pluthon-1.0.0-py3-none-any.whl", hash = "sha256:cb0bfef3b56f62551c7ccbb26a13ac9aaacb88faaa07351312739b0722d217ef"},
-    {file = "pluthon-1.0.0.tar.gz", hash = "sha256:57ff4e8d24adc24d33098324e984f9abb723a4847e38e7c79d7a96ce6dd434b2"},
+    {file = "pluthon-0.5.4-py3-none-any.whl", hash = "sha256:57254ba532d42833253abb8432ee18671127383c809eb4ef7114d6d0aca485fe"},
+    {file = "pluthon-0.5.4.tar.gz", hash = "sha256:4f7272674522bcedb46c4496a4030a09841d2ea896ba42f974c1a28a33ef8175"},
 ]
 
 [package.dependencies]
 ordered-set = ">=4.1.0,<5.0.0"
-uplc = ">=1.0.0,<1.1.0"
+uplc = ">=0.6.2,<0.7.0"
 
 [[package]]
 name = "pprintpp"
@@ -1758,23 +1758,18 @@ appdirs = "*"
 
 [[package]]
 name = "setuptools"
-version = "74.1.3"
+version = "70.3.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "setuptools-74.1.3-py3-none-any.whl", hash = "sha256:1cfd66bfcf197bce344da024c8f5b35acc4dcb7ca5202246a75296b4883f6851"},
-    {file = "setuptools-74.1.3.tar.gz", hash = "sha256:fbb126f14b0b9ffa54c4574a50ae60673bbe8ae0b1645889d10b3b14f5891d28"},
+    {file = "setuptools-70.3.0-py3-none-any.whl", hash = "sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc"},
+    {file = "setuptools-70.3.0.tar.gz", hash = "sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5"},
 ]
 
 [package.extras]
-check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)", "ruff (>=0.5.2)"]
-core = ["importlib-metadata (>=6)", "importlib-resources (>=5.10.2)", "jaraco.text (>=3.7)", "more-itertools (>=8.8)", "packaging (>=24)", "platformdirs (>=2.6.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
-cover = ["pytest-cov"]
-doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
-enabler = ["pytest-enabler (>=2.2)"]
-test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
-type = ["importlib-metadata (>=7.0.2)", "jaraco.develop (>=7.21)", "mypy (==1.11.*)", "pytest-mypy"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
+test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "importlib-metadata", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "mypy (==1.10.0)", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-home (>=0.5)", "pytest-mypy", "pytest-perf", "pytest-ruff (>=0.3.2)", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
 name = "six"
@@ -1893,22 +1888,23 @@ files = [
 
 [[package]]
 name = "uplc"
-version = "1.0.7"
+version = "0.6.10"
 description = "Python implementation of untyped plutus language core"
 optional = false
-python-versions = "<3.12,>=3.8"
+python-versions = "<3.12,>=3.8.1"
 files = [
-    {file = "uplc-1.0.7-py3-none-any.whl", hash = "sha256:ad6f08473c5b7bf9d2c9e1d083bcafe3bfd5eac6670f826ed6cd77c535b7e718"},
-    {file = "uplc-1.0.7.tar.gz", hash = "sha256:63b51e0ccbf87f18a1d56ae53fae4312bc989b73f20cc82ec22f2ad06bd14be0"},
+    {file = "uplc-0.6.10-py3-none-any.whl", hash = "sha256:fdffee77b4a40f117c200ce89759e87864850a1df98128595d67e97da4aa14f8"},
+    {file = "uplc-0.6.10.tar.gz", hash = "sha256:acea321dc4783be866cadbd2daed1af69fb53766bf24c7a529de02ee2ce3dc3c"},
 ]
 
 [package.dependencies]
 cbor2 = ">=5.4.6,<6.0.0"
 frozendict = ">=2.3.8,<3.0.0"
-frozenlist2 = ">=1.0.0,<2.0.0"
-pycardano = ">=0.9.0,<0.13.0"
+frozenlist = ">=1.3.3,<2.0.0"
+pycardano = ">=0.11.1,<0.12.0"
 python-secp256k1-cardano = ">=0.2.3,<0.3.0"
 rply = ">=0.7.8,<0.8.0"
+setuptools = ">=70.2.0,<71.0.0"
 
 [[package]]
 name = "urllib3"
@@ -2080,4 +2076,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10, <3.12"
-content-hash = "a59ce23c3575182209ba1d51a0df6ccfcabac6b33235497ec05edff187cd501f"
+content-hash = "b224b5e464c323d3cf6914b2c86950858a0d993c4b2c8fe7c5f2202615678eb4"
