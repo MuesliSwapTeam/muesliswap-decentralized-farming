@@ -131,7 +131,7 @@ During unstaking transactions, it was possible for additional staking positions 
     \item \textbf{Potential Risk:} High. Unauthorized unstaking could lead to loss of user funds and undermine trust in the platform.
     \item \textbf{Discussion:} The team recognized the need to enforce strict checks to ensure only the specified staking position is spent during an unstaking transaction.
     \item \textbf{Resolution:} Implemented validations to guarantee that no additional staking positions are spent from the contract during unstaking. The contract now verifies that exactly one staking position is consumed per unstaking transaction.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/5749e2475af1ebd35647f0b6f823853dda67b226}{5749e24}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/38fcb46f11b9ae5fad851c0a73e118c017d11917}{38fcb46f11b9ae5fad851c0a73e118c017d11917}
 \end{itemize}
 \end{criticalbox}
 
@@ -144,7 +144,7 @@ The \texttt{last\_update\_time} in the \texttt{FarmState} did not enforce a stri
     \item \textbf{Potential Risk:} High. Users could receive incorrect rewards, leading to financial discrepancies and potential exploitation.
     \item \textbf{Discussion:} It was crucial to ensure that time moves forward in the contract's logic to maintain reward calculation integrity.
     \item \textbf{Resolution:} Added a check to enforce that \texttt{last\_update\_time} is strictly increasing with each transaction, preventing any backward time manipulation.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/ee413c003cfa555567fd4bfbf6fa880de765f6cf}{ee413c0}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/998281c7ba099b092322a44afd8d8b323957f15e}{998281c7ba099b092322a44afd8d8b323957f15e}
 \end{itemize}
 \end{criticalbox}
 
@@ -159,7 +159,7 @@ The computation of the \texttt{cumulative\_rewards\_per\_token} variable used da
     \item \textbf{Potential Risk:} Medium. Inaccurate reward calculations could lead to users receiving less or more than their fair share.
     \item \textbf{Discussion:} Switching to milliseconds improves calculation precision and aligns with the time units used elsewhere in the contract.
     \item \textbf{Resolution:} Updated the reward calculation to use milliseconds instead of days, enhancing precision and consistency.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/c66fc96dc6236ac0c8f60ff04a545cbddcd6588d}{c66fc96}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/4ea292425b2887db21f2dbb79c431fe376876952}{4ea292425b2887db21f2dbb79c431fe376876952}
 \end{itemize}
 \end{moderatebox}
 
@@ -172,7 +172,7 @@ Initially, the contracts used slot numbers for time handling, which can be incon
     \item \textbf{Potential Risk:} Medium. Time inconsistencies could affect reward calculations and contract behavior.
     \item \textbf{Discussion:} Using POSIX time provides a consistent and reliable time measurement, reducing potential discrepancies.
     \item \textbf{Resolution:} Replaced slot numbers with POSIX time in milliseconds for all time-related computations, ensuring consistency across different network conditions.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/6d41f968105b5a7510fa28060a025207c22011db}{6d41f96}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/0f2db4d6d64a191baa540f9afb564cc03010b391}{0f2db4d6d64a191baa540f9afb564cc03010b391}
 \end{itemize}
 \end{moderatebox}
 
@@ -187,7 +187,7 @@ The initial implementation did not support batching multiple staking orders, lea
     \item \textbf{Potential Risk:} Low. Affects operational efficiency but not security.
     \item \textbf{Discussion:} Enabling batching would improve network efficiency and reduce fees for users by processing multiple orders in a single transaction.
     \item \textbf{Resolution:} Modified the contracts to support batching multiple staking orders, enhancing performance and user experience.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/6e12d6a868619cef1a0cbddfbc862438749cf3d8}{6e12d6a}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/94be12fc8acdcd86a9b862ed3f1038ad0c40db1e}{94be12fc8acdcd86a9b862ed3f1038ad0c40db1e}
 \end{itemize}
 \end{minorbox}
 
@@ -200,7 +200,7 @@ Similarly, the contracts did not support batching multiple unstaking orders, lim
     \item \textbf{Potential Risk:} Low. Impacts transaction throughput and user costs.
     \item \textbf{Discussion:} Batching unstaking orders reduces network congestion and lowers fees, benefiting both users and the network.
     \item \textbf{Resolution:} Updated the contracts to allow multiple unstaking orders to be processed in a single transaction.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/e5ea889fe523e28f37e7dac1190429bf596cf1db}{e5ea889}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/5545a17d11372a56278e886b730d9388bb9bd321}{5545a17d11372a56278e886b730d9388bb9bd321}
 \end{itemize}
 \end{minorbox}
 
@@ -213,7 +213,7 @@ To facilitate third-party batchers processing unstaking on behalf of users, an u
     \item \textbf{Potential Risk:} Low. Enhances functionality without compromising security.
     \item \textbf{Discussion:} The unstake permission NFT improves user experience by allowing batchers to process unstaking requests efficiently.
     \item \textbf{Resolution:} Implemented the unstake permission NFT within the contract logic, ensuring only authorized batchers can unstake on behalf of users.
-    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/ebfed77e73e640bbe8de5c9f83a8327a0e0f0379}{ebfed77}
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/0c565d489e6d78d692ad00ef946133892b67716d}{0c565d489e6d78d692ad00ef946133892b67716d}
 \end{itemize}
 \end{minorbox}
 
