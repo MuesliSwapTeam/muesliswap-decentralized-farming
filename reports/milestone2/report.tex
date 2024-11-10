@@ -1,0 +1,308 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{graphicx}
+
+\geometry{a4paper, margin=1in}
+
+\title{Milestone Report: On-chain Components for Decentralized Farming (Milestone 2)}
+\author{Internal Audit and Testing Report}
+\date{\today}
+
+\definecolor{critical}{RGB}{255,69,0} % Orange-Red
+\definecolor{moderate}{RGB}{255,165,0} % Orange
+\definecolor{minor}{RGB}{173,216,230} % Light Blue
+
+\tcbuselibrary{listingsutf8}
+\newtcolorbox{criticalbox}{
+    colback=critical!10!white, 
+    colframe=critical, 
+    title=Critical Severity,
+    fonttitle=\bfseries,
+    sharp corners
+}
+
+\newtcolorbox{moderatebox}{
+    colback=moderate!10!white, 
+    colframe=moderate, 
+    title=Moderate Severity,
+    fonttitle=\bfseries,
+    sharp corners
+}
+
+\newtcolorbox{minorbox}{
+    colback=minor!10!white, 
+    colframe=minor, 
+    title=Minor Severity,
+    fonttitle=\bfseries,
+    sharp corners
+}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+This milestone report outlines the completion of \textbf{Milestone 2}: "On-chain Components" for our Cardano Catalyst project focused on decentralized farming solutions. The deliverables for this milestone include:
+
+\begin{itemize}
+    \item Implementation of on-chain code for staking contracts, top-pools contracts, and governance-based farms using the OpShin programming language.
+    \item An internal security audit to ensure code robustness and security for all components.
+    \item A published blog post detailing the on-chain implementation and audit results.
+\end{itemize}
+
+The internal security audit was conducted by two members of the MuesliSwap team who were not involved in the development of the smart contract code, ensuring an unbiased review.
+
+This document provides a comprehensive internal audit report and summarizes the testing conducted on the smart contracts developed.
+
+\section{On-chain Components Overview}
+
+Our decentralized farming solution comprises three main on-chain components. For detailed information on system architecture and design choices, please refer to the report provided for \textbf{Milestone 1} of the project.
+
+\begin{enumerate}
+    \item \textbf{Staking Contracts}: Manage staking positions, track rewards, and enforce correct reward distribution in a trustless manner.
+    \item \textbf{Top-Pools Contracts}: Automatically allocate rewards to the largest liquidity pools based on their total value locked (TVL).
+    \item \textbf{Governance-Based Farms}: Allow the community to allocate rewards to pools through governance proposals, promoting decentralized decision-making.
+\end{enumerate}
+
+\section{Internal Security Audit}
+
+The internal security audit focused on ensuring that each component meets essential security properties and operates as intended without vulnerabilities. We summarize the key aspects that need to be ensured by the smart contracts, which are critical for the safety and integrity of the system. These properties were the main focus during our audit and testing.
+
+\subsection{Security Properties}
+
+\subsubsection{Staking Contracts}
+
+The staking contracts are central to the farming solution, handling users' staking positions and reward calculations. The following security properties were identified as critical:
+
+\begin{itemize}
+    \item \textbf{Accurate Reward Calculation}: Rewards must be calculated precisely based on staking amount and duration to ensure fairness.
+    \item \textbf{Immutable Staking Positions}: Unauthorized modifications to staking positions must be prevented. Only the owner of a staking position is authorized to modify or unstake it.
+    \item \textbf{Strict Time Handling}: Time variables must be handled carefully to prevent negative rewards or exploitation through time manipulation.
+    \item \textbf{Secure Unstaking Process}: Only the rightful owner or an authorized entity (e.g., a batcher with permission) should be able to unstake positions.
+\end{itemize}
+
+\subsubsection{Top-Pools Contracts}
+
+The top-pools contracts manage the automatic allocation of rewards to the largest liquidity pools. The following security properties are essential:
+
+\begin{itemize}
+    \item \textbf{Valid Pool Ranking}: Pool rankings should accurately reflect the liquidity of pools, ensuring that rewards are allocated to the top pools by TVL.
+    \item \textbf{Liquidity Verification}: Pool liquidity must be accurately verified to prevent manipulation. This is achieved by using the respective liquidity pool (LP) smart contract UTxO as a reference input in the transaction, ensuring that the reported liquidity matches the on-chain state.
+    \item \textbf{Secure Reward Allocation}: Rewards must be allocated correctly based on the verified pool rankings.
+    \item \textbf{Parameter Integrity}: Contract parameters should be protected from unauthorized changes, maintaining system integrity.
+\end{itemize}
+
+\subsubsection{Governance-Based Farms}
+
+Governance-based farms empower the community to decide on reward allocations through proposals. The critical security properties include:
+
+\begin{itemize}
+    \item \textbf{Community Governance}: Farm creation and updates should be controlled via governance proposals, ensuring that changes reflect the community's will.
+    \item \textbf{Secure Execution}: Unauthorized creation or modification of farms must be prevented. Only proposals that have been approved through the governance process can enact changes.
+    \item \textbf{Transparency}: Governance decisions should be transparent and auditable, maintaining trust within the community.
+\end{itemize}
+
+\subsection{Audit Findings and Resolutions}
+
+The audit identified several issues of varying severity, which have been addressed in the codebase. Issues are categorized based on their potential impact:
+
+\begin{itemize}
+    \item \textbf{Critical Severity}: Issues that could lead to significant security vulnerabilities, financial loss, or system failure.
+    \item \textbf{Moderate Severity}: Issues that could affect system performance, reliability, or minor security concerns.
+    \item \textbf{Minor Severity}: Issues that impact efficiency, user experience, or code maintainability without posing direct security risks.
+\end{itemize}
+
+Below is a detailed log of the findings, their significance, discussions, resolutions, and references to the specific code commits where fixes were implemented.
+
+\subsubsection{Critical Severity Issues}
+
+\begin{criticalbox}
+\textbf{Finding:} \textbf{Ensuring Exclusive Spending of Staking Positions}
+
+During unstaking transactions, it was possible for additional staking positions beyond the intended one to be spent from the contract. This vulnerability could allow malicious actors to unstake positions they do not own.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} High. Unauthorized unstaking could lead to loss of user funds and undermine trust in the platform.
+    \item \textbf{Discussion:} The team recognized the need to enforce strict checks to ensure only the specified staking position is spent during an unstaking transaction.
+    \item \textbf{Resolution:} Implemented validations to guarantee that no additional staking positions are spent from the contract during unstaking. The contract now verifies that exactly one staking position is consumed per unstaking transaction.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/5749e2475af1ebd35647f0b6f823853dda67b226}{5749e24}
+\end{itemize}
+\end{criticalbox}
+
+\begin{criticalbox}
+\textbf{Finding:} \textbf{Strictly Increasing \texttt{last\_update\_time}}
+
+The \texttt{last\_update\_time} in the \texttt{FarmState} did not enforce a strictly increasing constraint. If manipulated, this could result in negative rewards or incorrect reward calculations.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} High. Users could receive incorrect rewards, leading to financial discrepancies and potential exploitation.
+    \item \textbf{Discussion:} It was crucial to ensure that time moves forward in the contract's logic to maintain reward calculation integrity.
+    \item \textbf{Resolution:} Added a check to enforce that \texttt{last\_update\_time} is strictly increasing with each transaction, preventing any backward time manipulation.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/ee413c003cfa555567fd4bfbf6fa880de765f6cf}{ee413c0}
+\end{itemize}
+\end{criticalbox}
+
+\subsubsection{Moderate Severity Issues}
+
+\begin{moderatebox}
+\textbf{Finding:} \textbf{Incorrect Time Unit in Reward Calculation}
+
+The computation of the \texttt{cumulative\_rewards\_per\_token} variable used days as the time unit, which led to fractions with large denominators and potential precision loss, especially for short staking durations.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Medium. Inaccurate reward calculations could lead to users receiving less or more than their fair share.
+    \item \textbf{Discussion:} Switching to milliseconds improves calculation precision and aligns with the time units used elsewhere in the contract.
+    \item \textbf{Resolution:} Updated the reward calculation to use milliseconds instead of days, enhancing precision and consistency.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/c66fc96dc6236ac0c8f60ff04a545cbddcd6588d}{c66fc96}
+\end{itemize}
+\end{moderatebox}
+
+\begin{moderatebox}
+\textbf{Finding:} \textbf{Switching from Slot Numbers to POSIX Time}
+
+Initially, the contracts used slot numbers for time handling, which can be inconsistent due to variable slot lengths and network parameters.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Medium. Time inconsistencies could affect reward calculations and contract behavior.
+    \item \textbf{Discussion:} Using POSIX time provides a consistent and reliable time measurement, reducing potential discrepancies.
+    \item \textbf{Resolution:} Replaced slot numbers with POSIX time in milliseconds for all time-related computations, ensuring consistency across different network conditions.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/6d41f968105b5a7510fa28060a025207c22011db}{6d41f96}
+\end{itemize}
+\end{moderatebox}
+
+\subsubsection{Minor Severity Issues}
+
+\begin{minorbox}
+\textbf{Finding:} \textbf{Allowing Batching of Multiple Orders}
+
+The initial implementation did not support batching multiple staking orders, leading to inefficiencies in transaction processing and higher costs for users.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Low. Affects operational efficiency but not security.
+    \item \textbf{Discussion:} Enabling batching would improve network efficiency and reduce fees for users by processing multiple orders in a single transaction.
+    \item \textbf{Resolution:} Modified the contracts to support batching multiple staking orders, enhancing performance and user experience.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/6e12d6a868619cef1a0cbddfbc862438749cf3d8}{6e12d6a}
+\end{itemize}
+\end{minorbox}
+
+\begin{minorbox}
+\textbf{Finding:} \textbf{Enabling Batching of Multiple Unstaking Orders}
+
+Similarly, the contracts did not support batching multiple unstaking orders, limiting efficiency and increasing transaction costs.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Low. Impacts transaction throughput and user costs.
+    \item \textbf{Discussion:} Batching unstaking orders reduces network congestion and lowers fees, benefiting both users and the network.
+    \item \textbf{Resolution:} Updated the contracts to allow multiple unstaking orders to be processed in a single transaction.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/e5ea889fe523e28f37e7dac1190429bf596cf1db}{e5ea889}
+\end{itemize}
+\end{minorbox}
+
+\begin{minorbox}
+\textbf{Finding:} \textbf{Introduction of Unstake Permission NFT}
+
+To facilitate third-party batchers processing unstaking on behalf of users, an unstake permission NFT was introduced. This NFT grants permission to batchers to unstake tokens in the name of the staker.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Low. Enhances functionality without compromising security.
+    \item \textbf{Discussion:} The unstake permission NFT improves user experience by allowing batchers to process unstaking requests efficiently.
+    \item \textbf{Resolution:} Implemented the unstake permission NFT within the contract logic, ensuring only authorized batchers can unstake on behalf of users.
+    \item \textbf{Commit:} \href{https://github.com/MuesliSwapLabs/muesliswap-onchain-staking/commit/ebfed77e73e640bbe8de5c9f83a8327a0e0f0379}{ebfed77}
+\end{itemize}
+\end{minorbox}
+
+\subsection{Additional Fixes and Improvements}
+
+\begin{minorbox}
+\textbf{Finding:} \textbf{General Code Refactoring and Optimization}
+
+Throughout the audit, opportunities for general code improvements were identified, including optimizing functions and improving readability.
+
+\begin{itemize}[label=$\diamond$]
+    \item \textbf{Potential Risk:} Low. Enhances maintainability and future development.
+    \item \textbf{Discussion:} Refactoring code improves performance and makes future audits and updates more manageable.
+    \item \textbf{Resolution:} Applied code refactoring where appropriate, improving efficiency and readability without altering functionality.
+    \item \textbf{Commits:} Various commits addressing code optimization and refactoring.
+\end{itemize}
+\end{minorbox}
+
+\section{Testing Report}
+
+Comprehensive testing was conducted to validate the functionality and reliability of the smart contracts. Transactions were constructed using preliminary off-chain scripts written in \texttt{pycardano} and submitted to the Cardano pre-production testnet.
+
+The chosen tests mimic typical interactions with the main smart contract functionalities, covering the entire workflow from farm creation to staking, cancellation, and batching. This ensures that critical parts of the smart contract logic are thoroughly tested.
+
+\subsection{Test Cases and Results}
+
+\begin{enumerate}
+    \item \textbf{Creation of Farm}
+
+    \begin{itemize}
+        \item \textbf{Objective}: Test the initialization and deployment of a new farm contract.
+        \item \textbf{Transaction}: \href{https://preprod.cexplorer.io/tx/73c2ec0634b09a9d57d6cdca38bf36f4d4d7b3187cce5be8d3b51de66ab40ae2}{73c2ec0}
+        \item \textbf{Result}: Successfully deployed the farm contract with correct parameters. The farm UTxO was created with a unique NFT representing this farm, which was minted in the same transaction. This can be verified using the testnet explorer via the provided link.
+    \end{itemize}
+
+    \item \textbf{Placing a Stake Order}
+
+    \begin{itemize}
+        \item \textbf{Objective}: Verify that a user can place a stake order.
+        \item \textbf{Transaction}: \href{https://preprod.cexplorer.io/tx/af5827bdca6cbac144737d87463331cdc89af178921e5e5d26b0a1d48069ab46}{af5827b}
+        \item \textbf{Result}: Stake order was placed successfully, and the order datum was correctly recorded on-chain. Key fields such as the staking amount, owner address, and pool ID were verified using the testnet explorer.
+    \end{itemize}
+
+    \item \textbf{Canceling a Stake Order}
+
+    \begin{itemize}
+        \item \textbf{Objective}: Ensure that users can cancel their stake orders before processing.
+        \item \textbf{Transaction}: \href{https://preprod.cexplorer.io/tx/7f7be3818410c28a9c55cc6cf07bb0a413b31e02405f874cea3686317986e29b}{7f7be38}
+        \item \textbf{Result}: Stake order was canceled successfully, and funds were returned to the user without issues. The cancellation can be verified via the testnet explorer, confirming that the order UTxO was consumed appropriately.
+    \end{itemize}
+
+    \item \textbf{Placing Another Stake Order}
+
+    \begin{itemize}
+        \item \textbf{Objective}: Test that multiple stake orders can be placed sequentially without interference.
+        \item \textbf{Transaction}: \href{https://preprod.cexplorer.io/tx/5484008d76e7525ea9929884d81aa4e744c8a9fd6b03988f602336051076022b}{5484008}
+        \item \textbf{Result}: Second stake order was placed successfully, demonstrating the contract's ability to handle multiple orders. Key datum fields were verified to ensure correctness.
+    \end{itemize}
+
+    \item \textbf{Batch Processing Stake Orders}
+
+    \begin{itemize}
+        \item \textbf{Objective}: Validate the batching functionality for processing multiple stake orders in a single transaction.
+        \item \textbf{Transaction}: \href{https://preprod.cexplorer.io/tx/a110b110b803ee05301b961878834ed525afcf60f22767f3df1f74bce1ba09b7}{a110b11}
+        \item \textbf{Result}: Multiple stake orders were processed successfully in one transaction, confirming the efficiency gains from batching. This batching can be performed by any third-party batcher, as the smart contract verifies correct application, enabling permissionless batching.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Testing Environment}
+
+\begin{itemize}
+    \item \textbf{Network}: Cardano Pre-production Testnet
+    \item \textbf{Tools Used}: \texttt{pycardano} library for constructing and submitting transactions.
+    \item \textbf{Wallets}: Test wallets funded with test ADA for transaction fees and staking amounts.
+\end{itemize}
+
+\subsection{Observations}
+
+\begin{itemize}
+    \item All transactions were successfully accepted by the network and behaved as expected according to the contract logic.
+    \item Batching significantly reduced the number of transactions required, leading to lower fees and faster processing times.
+    \item Respective datums and NFTs were publicly inspected via the testnet explorer to verify that staking positions are correctly encoded. This transparency allows users to independently verify the state of their staking positions.
+    \item No anomalies or unexpected behaviors were observed during testing, indicating robust contract performance.
+\end{itemize}
+
+\section{Conclusion}
+
+The completion of \textbf{Milestone 2} marks a significant step towards providing a fully decentralized and feature-rich farming solution on the Cardano blockchain. The internal audit has ensured that the smart contracts are secure, robust, and function as intended. Testing on the pre-production testnet has validated the operational aspects of the contracts.
+
+A fundamental next step is to develop robust and production-ready off-chain infrastructure for interaction with the smart contracts (Milestone 3). This will involve creating user interfaces and off-chain components that allow users to interact seamlessly with the on-chain contracts. Making everything work together is key to moving towards mainnet deployment in the final step.
+
+\end{document}
