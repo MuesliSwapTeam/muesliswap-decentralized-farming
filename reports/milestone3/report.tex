@@ -1,0 +1,211 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{graphicx}
+
+\geometry{a4paper, margin=1in}
+
+\title{Milestone Report: Off-chain Components for Decentralized Farming (Milestone 3)}
+\author{Documentation \& Testing Report}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\vspace{8em}
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+This milestone report outlines the completion of \textbf{Milestone 3}: "Off-chain Components" for our Cardano Catalyst project focused on decentralized farming solutions. The deliverables for this milestone include:
+
+\begin{itemize}
+    \item Development of comprehensive off-chain infrastructure for managing transactions and interactions with staking contracts, top-pools contracts, and governance-based farms.
+    \item Implementation of a robust backend system comprising blockchain querying, transaction parsing, database management, and a user-friendly API.
+    \item Documentation of the implemented off-chain tools, their usage, and API endpoints.
+    \item Presentation of successful integration between off-chain infrastructure and on-chain components through testnet operations.
+\end{itemize}
+
+This document provides detailed documentation of the developed off-chain tools and summarizes the testing performed to demonstrate functional integration with on-chain smart contracts.
+
+\section{Off-chain Components Overview}
+
+Our off-chain infrastructure comprises two key components:
+
+\begin{enumerate}[label=\alph*)]
+    \item \textbf{Transaction Building Tools:} Python scripts for creating, managing, and submitting transactions related to staking, top-pools contracts, and governance-based farms. These tools align closely with our on-chain components, specifically:
+    \begin{itemize}
+        \item Staking Contracts
+        \item Top-Pools Contracts
+        \item Governance-Based Farms
+    \end{itemize}
+
+    \item \textbf{Blockchain Querying and API System:} A backend consisting of a chain querier and transaction parser, a structured database, and an API server. This system scans the blockchain, parses relevant transaction data, organizes it efficiently in a database, and exposes it via an accessible API for frontend integration.
+\end{enumerate}
+
+The following sections document these components in greater detail, providing guidance on their usage and functionality.
+
+\section{Off-chain Tools Documentation}
+
+Below is the complete list of implemented off-chain Python scripts, executable via:
+
+\begin{verbatim}
+python3 -m muesliswap_onchain_staking.offchain.<component_name>
+\end{verbatim}
+
+\begin{itemize}
+    \item \textbf{batch\_stake\_orders}: Processes multiple staking orders simultaneously to enhance transaction efficiency.
+    \item \textbf{batch\_unstake\_orders}: Efficiently handles multiple unstaking requests in a single transaction.
+    \item \textbf{cancel\_stake\_order}: Allows users to cancel previously submitted staking orders before they're processed.
+    \item \textbf{create\_farm}: Initializes and deploys new farming contracts on-chain.
+    \item \textbf{mint\_free}: Utility script to mint test tokens on the testnet environment for testing purposes.
+    \item \textbf{place\_stake\_order}: Places a staking order on-chain, recording the staker's intent to lock tokens in exchange for rewards.
+    \item \textbf{place\_unstake\_order}: Records a user's request to unstake previously staked tokens.
+    \item \textbf{unstake}: Executes an unstaking transaction, returning the tokens to the user's wallet.
+    \item \textbf{update\_emission\_rate}: Updates the emission rate of rewards in a specific farming contract.
+    \item \textbf{top\_pools.init}: Initializes the top-pools contract, setting up initial parameters and rankings.
+    \item \textbf{top\_pools.update\_params}: Updates the governance parameters within the top-pools contracts.
+    \item \textbf{top\_pools.update\_ranking}: Refreshes pool rankings based on liquidity, ensuring accurate reward allocation.
+\end{itemize}
+
+These tools enable efficient and reliable interactions with the on-chain smart contracts.
+
+\section{API Backend System}
+
+The API backend comprises three main components:
+
+\subsection{Chain Querier and Transaction Parser}
+The chain querier continuously scans the Cardano blockchain via Ogmios, identifying transactions relevant to our decentralized farming solution. Parsed transactions extract essential data, which is then stored into the database.
+
+Key features include:
+\begin{itemize}
+    \item Handling blockchain rollbacks.
+    \item Robust parsing and error handling to ensure data consistency.
+    \item Integration with Ogmios for reliable real-time blockchain querying.
+\end{itemize}
+
+\subsection{Database Structure}
+The backend utilizes an SQLite database with the following essential data models:
+
+\begin{itemize}
+    \item \textbf{Blocks \& Transactions}: Stores block and transaction metadata.
+    \item \textbf{Transaction Outputs}: Records detailed information about transaction outputs, datums, and involved tokens.
+    \item \textbf{Farm States}: Tracks farming parameters, rewards, emission rates, and staking details.
+    \item \textbf{Staking Positions}: Records user staking positions, associated cumulative rewards, and staking durations.
+\end{itemize}
+
+The database ensures efficient and structured access to all relevant blockchain data.
+
+\subsection{API Server and Endpoints}
+The API server, built using FastAPI, exposes a straightforward HTTP interface for accessing farming and staking data:
+
+\begin{itemize}
+    \item \textbf{GET /api/v1/farms}: Provides comprehensive data about all active farms, including reward tokens, emission rates, and total amounts staked.
+    \item \textbf{GET /api/v1/staking/positions}: Retrieves staking positions for a given user wallet, detailing staking amounts, durations, and earned rewards.
+    \item \textbf{GET /api/v1/health}: Checks system health and synchronization status with the Cardano blockchain.
+\end{itemize}
+
+This backend API significantly simplifies frontend integration and improves user experience.
+
+\section{Testing Report}
+
+We conducted comprehensive testing to validate the successful integration and functionality of our off-chain infrastructure with the previously developed on-chain components. All transactions were constructed using the off-chain scripts described above and submitted to the Cardano Pre-production Testnet. Below we detail the individual test scenarios, including transaction descriptions and links for verification.
+
+\subsection{Test Scenarios and Results}
+
+\begin{enumerate}
+    \item \textbf{Farm Creation}
+    \begin{itemize}
+        \item \textbf{Description:} Deployment and initialization of a new farming contract.
+        \item \textbf{Result:} Successfully created farm with correct initialization parameters encoded in the datum.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/e06940f81e0b9a788c3334913875c167bb8b2f1508f278cae970259cd7c33067}{e06940f81e0b9a788c3334913875c167bb8b2f1508f278cae970259cd7c33067}
+    \end{itemize}
+
+    \item \textbf{Emission Rate Update}
+    \begin{itemize}
+        \item \textbf{Description:} Adjusted the emission rate of rewards within an existing farm contract.
+        \item \textbf{Result:} Verified the successful update of emission parameters in the contract datum.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/758202b3582552a811a1055be1445e97f6520cc55e858b470b4a231b8d292e7a}{758202b3582552a811a1055be1445e97f6520cc55e858b470b4a231b8d292e7a}
+    \end{itemize}
+
+    \item \textbf{Place Stake Order}
+    \begin{itemize}
+        \item \textbf{Description:} Submitted an individual staking order, recording the user's intent to participate in farming.
+        \item \textbf{Result:} Successfully recorded the stake order with accurate staking parameters.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/0dfee56c3bc9774f1dd17fffffc0b6fdf2d38e28354edfb633756a07a41e8d44}{0dfee56c3bc9774f1dd17fffffc0b6fdf2d38e28354edfb633756a07a41e8d44}
+    \end{itemize}
+
+    \item \textbf{Batch Stake Orders}
+    \begin{itemize}
+        \item \textbf{Description:} Batched processing of multiple staking orders within a single transaction to improve efficiency.
+        \item \textbf{Result:} Successfully processed and confirmed multiple staking orders simultaneously.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/a110b110b803ee05301b961878834ed525afcf60f22767f3df1f74bce1ba09b7}{a110b110b803ee05301b961878834ed525afcf60f22767f3df1f74bce1ba09b7}
+    \end{itemize}
+
+    \item \textbf{Top Pools Contract Initialization}
+    \begin{itemize}
+        \item \textbf{Description:} Initialized the top-pools contract, specifying the initial ranked list of pools and associated reward amounts.
+        \item \textbf{Result:} Successfully deployed initial top pools UTxO and verified datum correctness.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/51f670e93809c66511bfb825651b63ccac94456b4daa48abbe1a9f048f2e3cfb}{51f670e93809c66511bfb825651b63ccac94456b4daa48abbe1a9f048f2e3cfb}
+    \end{itemize}
+
+    \item \textbf{Top Pools Parameter Update}
+    \begin{itemize}
+        \item \textbf{Description:} Updated rewards for a specific pool in the ranking list, ensuring no unauthorized changes were introduced.
+        \item \textbf{Result:} Successfully validated the update operation and contract constraints.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/635a1ebd46b660b88389c4a0fdf55628ff28474952201365f49518ef4fbadf80}{635a1ebd46b660b88389c4a0fdf55628ff28474952201365f49518ef4fbadf80}
+    \end{itemize}
+
+    \item \textbf{Top Pools Ranking Update}
+    \begin{itemize}
+        \item \textbf{Description:} Updated pool rankings by swapping positions within the top-pools list.
+        \item \textbf{Result:} Successfully executed ranking swap; verified datum reflects correct list order.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/07a26abd71d2ce51688b889f307442b2973fb2b78760f0cd96db57204155303c}{07a26abd71d2ce51688b889f307442b2973fb2b78760f0cd96db57204155303c}
+    \end{itemize}
+
+    \item \textbf{Governance-Based Tally Creation}
+    \begin{itemize}
+        \item \textbf{Description:} Initiated a governance tally proposing an update to a farm's reward parameters.
+        \item \textbf{Result:} Tally successfully created and recorded on-chain, ready for community voting.
+        \item \textbf{Transaction:} \href{https://preprod.cexplorer.io/tx/c20cb35ac518ff580874a1e870fe2635699f1f2217018fe149a0a3132a29b3fd}{c20cb35ac518ff580874a1e870fe2635699f1f2217018fe149a0a3132a29b3fd}
+    \end{itemize}
+
+    \item \textbf{Governance Stake and Voting}
+    \begin{itemize}
+        \item \textbf{Description:} Created a governance stake and subsequently cast a vote within the tally.
+        \item \textbf{Result:} Verified successful stake creation and vote inclusion in the governance tally.
+        \item \textbf{Stake Transaction:} \href{https://preprod.cexplorer.io/tx/a321eb9246044d437a7b199de7e519a02b876fec785db5869975cc58f4292bd0}{a321eb9246044d437a7b199de7e519a02b876fec785db5869975cc58f4292bd0}\\
+        \item \textbf{Vote Transaction:} \href{https://preprod.cexplorer.io/tx/c6341d632b068ac044769e26e2e35ed9124502ad202c3eb88b9cd9f07529527d}{c6341d632b068ac044769e26e2e35ed9124502ad202c3eb88b9cd9f07529527d}
+    \end{itemize}
+
+\end{enumerate}
+
+\subsection{Observations}
+\begin{itemize}
+    \item All off-chain tools successfully constructed valid transactions.
+    \item Interactions between off-chain scripts and on-chain contracts behaved as intended.
+    \item Datums and transaction outputs were verified through public blockchain explorers.
+\end{itemize}
+
+\section{Conclusion}
+
+The successful completion of \textbf{Milestone 3} demonstrates a fully functional off-chain infrastructure integrated seamlessly with our decentralized farming smart contracts. This milestone significantly advances our project, enabling effective transaction management, robust backend querying, and a user-friendly API for frontend integration.
+
+Our next steps include:
+
+\begin{itemize}
+    \item Deploying an alpha version for collecting user feedback.
+    \item Integrating necessary adjustments based on internal and community input.
+    \item Officially launching the complete farming solution on MuesliSwap.
+    \item Preparing final deployment documentation, a public closeout report, and video materials for community transparency and engagement.
+\end{itemize}
+
+These upcoming steps ensure our decentralized farming system aligns closely with community expectations, leading to a robust and sustainable farming experience on Cardano.
+
+\end{document}
