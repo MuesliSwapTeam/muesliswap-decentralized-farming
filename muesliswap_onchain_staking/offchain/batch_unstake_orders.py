@@ -5,7 +5,7 @@ from muesliswap_onchain_staking.onchain import batching, staking, farm_nft
 from muesliswap_onchain_staking.onchain.util import floor_scale_fraction
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network, from_address
-from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.utils.contracts import get_contract, module_name, get_ref_utxo
 from muesliswap_onchain_staking.offchain.util import (
     with_min_lovelace,
     sorted_utxos,
@@ -25,7 +25,7 @@ from pycardano import (
 
 
 def main(
-    wallet: str = "batcher",
+    wallet: str = "staker",
 ):
     batching_script, _, batching_address = get_contract(
         module_name(batching), compressed=True
@@ -35,13 +35,23 @@ def main(
     )
     _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
 
+    batching_script_ref_utxo = get_ref_utxo(batching_script, context)
+    staking_script_ref_utxo = get_ref_utxo(staking_script, context)
+
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    assert (
-        len(batching_utxos) == 1
-    ), "Batching of multiple orders is not supported (yet)."
+    # assert (
+    #     len(batching_utxos) == 1
+    # ), "Batching of multiple orders is not supported (yet)."
+    baching_input = None
+    for u in batching_utxos:
+        if u.output.datum:
+            baching_input = u
+            break
+    assert baching_input, "No batching UTxO with datum found."
+    batching_utxos = [baching_input]
 
     staking_utxos = context.utxos(staking_address)
     for u in staking_utxos:
@@ -49,11 +59,13 @@ def main(
             farm_input = u
             break
     assert farm_input, "No farm found."
-    assert (
-        len(staking_utxos) == 2
-    ), "Expected two staking UTxOs (one farm, one position)."
 
-    staking_input = staking_utxos[0 if farm_input == staking_utxos[1] else 1]
+    staking_input = None
+    for u in staking_utxos:
+        if u.output.datum and u != farm_input:
+            staking_input = u
+            break
+    assert staking_input, "No staking position found."
 
     prev_farm_datum = staking.FarmState.from_cbor(farm_input.output.datum.cbor)
     staking_position_datum = staking.StakingPosition.from_cbor(
@@ -75,7 +87,7 @@ def main(
             for u in batching_utxos
         ]
     )
-    current_time = int(datetime.now().timestamp() * 1000)
+    current_time = int(datetime.now().timestamp() * 1000) + 2 * 60_000
 
     unlock_amount = amount_of_token_in_value(
         prev_farm_datum.params.stake_token, staking_input.output.amount
@@ -190,20 +202,20 @@ def main(
     # - add script inputs
     builder.add_script_input(
         farm_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         farm_unstake_redeemer,
     )
     builder.add_script_input(
         staking_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         staking_unstake_redeemer,
     )
     for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
             o[2],
-            batching_script,
+            batching_script_ref_utxo or batching_script,
             None,
             r,
         )

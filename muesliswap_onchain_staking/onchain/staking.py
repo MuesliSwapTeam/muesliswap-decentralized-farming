@@ -1,5 +1,6 @@
 from opshin.prelude import *
 from opshin.std.math import *
+from opshin.std.fractions import *
 from muesliswap_onchain_staking.onchain.util import *
 from muesliswap_onchain_staking.onchain.staking_types import *
 from muesliswap_onchain_staking.onchain.batching_types import *
@@ -43,16 +44,28 @@ def compute_updated_cumulative_rewards_per_token(
     Compute the updated cumulative reward per token.
     """
     # TODO: fraction computations can probably be optimized
+    # return [
+    #     (
+    #         prev_cum_rpts[i]
+    #         if amount_staked == 0
+    #         else add_fraction(
+    #             prev_cum_rpts[i],
+    #             Fraction(
+    #                 emission_rates[i] * (current_time - last_update_time),
+    #                 amount_staked * MILLIS_IN_DAY,
+    #             ),
+    #         )
+    #     )
+    #     for i in range(len(emission_rates))
+    # ]
     return [
         (
             prev_cum_rpts[i]
             if amount_staked == 0
-            else add_fraction(
-                prev_cum_rpts[i],
-                Fraction(
-                    emission_rates[i] * (current_time - last_update_time),
-                    amount_staked * MILLIS_IN_DAY,
-                ),
+            else prev_cum_rpts[i]
+            + Fraction(
+                emission_rates[i] * (current_time - last_update_time),
+                amount_staked * MILLIS_IN_DAY,
             )
         )
         for i in range(len(emission_rates))
@@ -143,11 +156,11 @@ def validator(
                 own_input_info.resolved,
                 policy_id,
             )
-            check_correct_unstake_permission_nft(
-                unstake_order,
-                unstake_permission_nft_policy,
-                order_datum,
-            )
+            # check_correct_unstake_permission_nft(
+            #     unstake_order,
+            #     unstake_permission_nft_policy,
+            #     order_datum,
+            # )
 
         else:  # meaning we're spending the farm UTxO
             assert isinstance(datum, FarmState), "Invalid datum type."

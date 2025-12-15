@@ -8,15 +8,16 @@ packages = [{include = "muesliswap_onchain_staking"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.12"
-opshin = "0.24.1"
-fire = "^0.6.0"
+opshin = "0.24.4"
 # pycardano = {git = "https://github.com/MuesliSwapLabs/pycardano.git", rev = "running_fixes"}
-pycardano = "0.12.3"
+pycardano = "0.15.1"
+fire = "^0.6.0"
 peewee = "^3.17.1"
 fastapi = "^0.110.1"
 uvicorn = {extras = ["all"], version = "^0.29.0"}
 gelidum = "^0.7.0"
 fastapi-cache2 = "^0.2.1"
+setuptools = "75.3.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.9.0"

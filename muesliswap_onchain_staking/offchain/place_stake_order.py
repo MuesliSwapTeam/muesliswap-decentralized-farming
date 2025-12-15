@@ -23,7 +23,7 @@ from opshin.prelude import Token
 def main(
     wallet: str = "staker",
     stake_token: Token = token_from_string(
-        "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+        "1a92837ebb35de4be6afaa1da8084df613c69a983ddefc93fce54b1e.6d7565736c69"
     ),
     stake_amount: int = 100,
 ):
@@ -34,8 +34,14 @@ def main(
     # determine pool id from existing pool
     _, _, staking_address = get_contract(module_name(staking), compressed=True)
     staking_utxos = context.utxos(staking_address)
-    assert len(staking_utxos) == 1, "There should be exactly one staking UTxO."
-    farm_input = staking_utxos[0]
+
+    farm_input = None
+    for u in staking_utxos:
+        if u.output.datum:
+            farm_input = u
+            break
+    assert farm_input, "No farm found."
+
     farm_datum = staking.FarmState.from_cbor(
         farm_input.output.datum.cbor
     )

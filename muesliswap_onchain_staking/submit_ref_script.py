@@ -14,7 +14,7 @@ from muesliswap_onchain_staking.onchain import (
 
 
 def main(compress: bool = True):
-    owner = "scripts"
+    owner = "staker"
     _, payment_skey, payment_address = get_signing_info(
         owner, network=network
     )

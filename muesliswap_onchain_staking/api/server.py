@@ -224,5 +224,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "server:app", host="localhost", port=8001, log_level="info", reload=True
+        "server:app", host="localhost", port=8008, log_level="info", reload=True
     )

@@ -4,7 +4,7 @@ from datetime import datetime
 from muesliswap_onchain_staking.onchain import batching, staking
 from muesliswap_onchain_staking.utils.network import show_tx, context
 from muesliswap_onchain_staking.utils import get_signing_info, network
-from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.utils.contracts import get_contract, module_name, get_ref_utxo
 from muesliswap_onchain_staking.offchain.util import (
     with_min_lovelace,
     sorted_utxos,
@@ -26,7 +26,7 @@ from pycardano import (
 
 
 def main(
-    wallet: str = "batcher",
+    wallet: str = "staker",
 ):
     batching_script, _, batching_address = get_contract(
         module_name(batching), compressed=True
@@ -34,6 +34,9 @@ def main(
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
     )
+    staking_script_ref_utxo = get_ref_utxo(staking_script, context)
+    batching_script_ref_utxo = get_ref_utxo(batching_script, context)
+
     _, staking_policy_id, staking_address = get_contract(
         module_name(staking), compressed=True
     )
@@ -42,12 +45,21 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    assert (
-        len(batching_utxos) == 1
-    ), "Batching of multiple orders is not supported (yet)."
-    staking_utxos = context.utxos(staking_address)
+    batching_utxo = None
+    for u in batching_utxos:
+        if u.output.datum:
+            batching_utxo = u
+            break
+    assert batching_utxo, "No batching UTxO with datum found."
+    batching_utxos = [batching_utxo]
 
-    staking_input = staking_utxos[0]
+    staking_utxos = context.utxos(staking_address)
+    staking_input = None
+    for u in staking_utxos:
+        if u.output.datum:
+            staking_input = u
+            break
+    assert staking_input, "No staking UTxO with datum found."
     prev_farm_datum = staking.FarmState.from_cbor(staking_input.output.datum.cbor)
 
     tx_inputs = sorted_utxos(batching_utxos + [staking_input] + payment_utxos)
@@ -63,7 +75,7 @@ def main(
     )
 
     farm_input_index = tx_inputs.index(staking_input)
-    current_time = int(datetime.now().timestamp() * 1000)
+    current_time = int(datetime.now().timestamp() * 1000) + 2 * 60_000
     total_amount_of_new_stake = sum(
         [
             amount_of_token_in_value(
@@ -157,15 +169,15 @@ def main(
                 address=payment_address,
                 amount=Value(
                     multi_asset=asset_from_token(
-                        prev_farm_datum.params.stake_token, 510_000
+                        prev_farm_datum.params.stake_token, 999_800
                     )
                 ),
             ),
             context,
         )
     )
-    builder.validity_start = context.last_block_slot - 50
-    builder.ttl = context.last_block_slot + 100
+    builder.validity_start = context.last_block_slot
+    builder.ttl = context.last_block_slot + 179
     builder.mint = asset_from_script_hash(staking_policy_id, STAKE_NFT_NAME, 1)
     # - add inputs
     for u in payment_utxos:
@@ -173,19 +185,19 @@ def main(
     # - add script inputs
     builder.add_script_input(
         staking_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         farm_apply_redeemer,
     )
     for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
             o[2],
-            batching_script,
+            batching_script_ref_utxo or batching_script,
             None,
             r,
         )
     builder.add_minting_script(
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         Redeemer(
             staking.MintApplyOrder(
                 farm_input_index=farm_input_index,
@@ -203,7 +215,7 @@ def main(
     # submit the transaction
     context.submit_tx(
         adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=150, output_offset=12_930
+            signed_tx, [payment_skey], fee_offset=0, output_offset=4_310
         )
     )
 
