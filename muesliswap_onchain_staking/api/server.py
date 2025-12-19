@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional, List
+from pydantic import BaseModel
 
 from fastapi import Query, FastAPI
 from fastapi.responses import ORJSONResponse
@@ -12,6 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from muesliswap_onchain_staking.api.db_models import db
 
 from muesliswap_onchain_staking.api.db_queries import *
+from muesliswap_onchain_staking.api.tx_builder.build import place_stake_order
+from muesliswap_onchain_staking.api.ep_util import get_body_or_query_params
+
 
 # logger setup
 _LOGGER = logging.getLogger(__name__)
@@ -183,6 +187,13 @@ ProposalTypeQuery = DashingQuery(
     # TODO add validation
 )
 
+class StakeOrderRequest(BaseModel):
+    user_address: str
+    stake_token: str
+    stake_amount: int
+    pool_id: str
+    utxos: Optional[List[dict]] = None
+
 
 @app.get("/api/v1/health")
 def health():
@@ -217,6 +228,34 @@ def staking_positions(wallet: str = WalletQuery):
     Get all staking positions for a wallet.
     """
     return ORJSONResponse(query_staking_positions_per_wallet(wallet))
+
+
+@app.post("/api/v1/stake_order")
+async def stake_order(
+    params: StakeOrderRequest = get_body_or_query_params(
+        StakeOrderRequest,
+        required_query_params=[
+            "user_address",
+            "stake_token",
+            "stake_amount",
+            "pool_id",
+        ],
+    ),
+):
+    """
+    Place a stake order.
+    """
+    return ORJSONResponse(
+        {
+            "tx_cbor": await place_stake_order(
+                user_address=params.user_address,
+                stake_token=params.stake_token,
+                stake_amount=params.stake_amount,
+                pool_id=params.pool_id,
+                utxos=params.utxos,
+            )
+        }
+    )
 
 
 # for debugging
