@@ -22,21 +22,23 @@ from pycardano import (
 )
 from opshin.prelude import Token, TokenName
 from muesliswap_onchain_staking.api.tx_builder.util import select_utxos
+from muesliswap_onchain_staking.offchain.util import token_from_string
 
 
 async def place_stake_order(
     user_address: Address,
-    stake_token: Token,
+    stake_token_str: str,
     stake_amount: int,
-    pool_id: TokenName,
-    utxos: List[UTxO] = None,
+    pool_id_str: str,
 ):
+    stake_token = token_from_string(stake_token_str)
+    pool_id = token_from_string("." + pool_id_str).token_name
+
     _, _, stake_order_batching = get_contract(module_name(batching), compressed=True)
-    _, _, staking_address = get_contract(module_name(staking), compressed=True)
 
     # construct the stake order datum
     stake_order_datum = batching.StakeOrder(
-        owner=to_address(user_address),
+        owner=to_address(Address.from_primitive(user_address)),
         pool_id=pool_id,
     )
 
@@ -47,15 +49,16 @@ async def place_stake_order(
             metadata=Metadata({674: {"msg": ["Create Add Stake Order"]}})
         )
     )
-    for u in select_utxos(
-        address=user_address,
-        ada_amount=2_000_000,
-        policy_id=stake_token.policy_id,
-        token_name=stake_token.token_name,
-        token_amount=stake_amount,
-        utxos=utxos,
-    ):
-        builder.add_input(u)
+    builder.add_input_address(user_address)
+    # for u in select_utxos(
+    #     address=user_address,
+    #     ada_amount=2_000_000,
+    #     policy_id=stake_token.policy_id.hex(),
+    #     token_name=stake_token.token_name.hex(),
+    #     token_amount=stake_amount,
+    #     utxos=utxos,
+    # ):
+    #     builder.add_input(u)
 
     # construct the output
     stake_order_output = TransactionOutput(

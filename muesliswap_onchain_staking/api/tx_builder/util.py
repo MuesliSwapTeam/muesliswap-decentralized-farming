@@ -17,7 +17,8 @@ import os
 import requests
 from muesliswap_onchain_staking.utils.network import context
 from opshin.prelude import Token
-ADA = Token(policy_id="", name="")
+
+ADA = Token(policy_id=b"", token_name=b"")
 
 
 def select_utxos(
@@ -36,6 +37,8 @@ def select_utxos(
     If no utxos are provided, the function will fetch based on the address
     (if multi_address is False) or the account (if multi_address is True)
     """
+    print(policy_id, token_name)
+    print(type(policy_id), type(token_name))
     encoded_address = address.encode()
     if not utxos:
         utxos = context.utxos(address)

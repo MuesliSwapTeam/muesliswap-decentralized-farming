@@ -192,7 +192,6 @@ class StakeOrderRequest(BaseModel):
     stake_token: str
     stake_amount: int
     pool_id: str
-    utxos: Optional[List[dict]] = None
 
 
 @app.get("/api/v1/health")
@@ -249,10 +248,9 @@ async def stake_order(
         {
             "tx_cbor": await place_stake_order(
                 user_address=params.user_address,
-                stake_token=params.stake_token,
+                stake_token_str=params.stake_token,
                 stake_amount=params.stake_amount,
-                pool_id=params.pool_id,
-                utxos=params.utxos,
+                pool_id_str=params.pool_id,
             )
         }
     )
