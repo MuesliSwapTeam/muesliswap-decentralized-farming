@@ -228,7 +228,16 @@ def staking_positions(wallet: str = WalletQuery):
     """
     Get all staking positions for a wallet.
     """
-    return ORJSONResponse(query_staking_positions_per_wallet(wallet))
+    positions = query_staking_positions_per_wallet(wallet)
+    if not positions:
+        return ORJSONResponse(
+            {
+                "items": [],
+                "count": 0,
+                "message": "No staking positions found for this wallet.",
+            }
+        )
+    return ORJSONResponse({"items": positions, "count": len(positions)})
 
 
 # for debugging
