@@ -22,8 +22,7 @@ logging.basicConfig(
 
 def DashingQuery(convert_underscores=True, **kwargs) -> Query:
     """
-    This class enables "convert underscores" by default, allowing parameter names
-    with underscores to be accessed via hypehenated versions
+    Enable underscore-to-hyphen aliasing for query parameters by default.
     """
     query = Query(**kwargs)
     query.convert_underscores = convert_underscores
@@ -32,8 +31,8 @@ def DashingQuery(convert_underscores=True, **kwargs) -> Query:
 
 app = FastAPI(
     default_response_class=ORJSONResponse,
-    title="MuesliSwap Staking API.",
-    description="The MuesliSwap Staking API provides access to on-chain data for the MuesliSwap Onchain Staking System.",
+    title="MuesliSwap Staking API",
+    description="The MuesliSwap Staking API provides access to on-chain data for the MuesliSwap On-Chain Staking System.",
     version="0.0.1",
 )
 
@@ -125,7 +124,7 @@ VerifiedQuery = DashingQuery(
     pattern=BOOLISH_RE,
 )
 PubkeyHashQuery = DashingQuery(
-    description="Pubkeyhash of a wallet",
+    description="Public key hash of a wallet",
     examples=["dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f"],
     pattern=HEX_56_RE,
 )
@@ -135,7 +134,7 @@ StakekeyHashQuery = DashingQuery(
     pattern=HEX_56_RE,
 )
 PubkeyHashesQuery = DashingQuery(
-    description="Stake key hash of a wallet",
+    description="Comma-separated public key hashes",
     examples=[
         "",
         "dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f,dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f",
@@ -163,7 +162,7 @@ ProviderQuery = DashingQuery(
     pattern=PROVIDER_RE,
 )
 TokenQuery = DashingQuery(
-    description="Toke name in hex",
+    description="Token name in hex",
     examples=[
         ".",
         "afbe91c0b44b3040e360057bf8354ead8c49c4979ae6ab7c4fbdc9eb.4d494c4b7632",
@@ -171,7 +170,7 @@ TokenQuery = DashingQuery(
     pattern=TOKEN_RE,
 )
 AssetIdentifierQuery = DashingQuery(
-    description="Asset identifier in hex: Concatenation of the policy_id and hex-encoded asset_name",
+    description="Asset identifier in hex: concatenation of the policy_id and hex-encoded asset_name",
     examples=[
         "",
         "afbe91c0b44b3040e360057bf8354ead8c49c4979ae6ab7c4fbdc9eb4d494c4b7632",
@@ -185,7 +184,7 @@ TransactionHashQuery = DashingQuery(
     pattern=HEX_64_RE,
 )
 TransactionIdQuery = DashingQuery(
-    description="Transaction id",
+    description="Transaction ID",
     examples=[0, 1, 2],
     ge=0,
 )
