@@ -209,7 +209,9 @@ ProposalTypeQuery = DashingQuery(
 
 
 @app.get("/api/v1/health")
-def health():
+def health(response: Response):
+    add_cachecontrol(response, max_age=5)
+    add_jsoncontenttype(response)
     last_block = db.Block.select().order_by(db.Block.slot.desc()).first()
     return ORJSONResponse(
         {
@@ -228,10 +230,12 @@ def health():
 
 
 @app.get("/api/v1/farms")
-def farms(include_decoded_names: bool = Query(default=False)):
+def farms(response: Response, include_decoded_names: bool = Query(default=False)):
     """
     Get all farms.
     """
+    add_cachecontrol(response, max_age=20)
+    add_jsoncontenttype(response)
     farms_data = query_farms()
     if not include_decoded_names:
         return ORJSONResponse(farms_data)
@@ -249,10 +253,12 @@ def farms(include_decoded_names: bool = Query(default=False)):
 
 
 @app.get("/api/v1/staking/positions")
-def staking_positions(wallet: str = WalletQuery):
+def staking_positions(response: Response, wallet: str = WalletQuery):
     """
     Get all staking positions for a wallet.
     """
+    add_cachecontrol(response, max_age=10)
+    add_jsoncontenttype(response)
     positions = query_staking_positions_per_wallet(wallet)
     if not positions:
         return ORJSONResponse(
