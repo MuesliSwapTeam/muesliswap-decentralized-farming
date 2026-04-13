@@ -27,6 +27,7 @@ def query_farms():
         JOIN farmcumulativerewardpertoken fcrpt ON fcrpt.farm_params_id = fp.id
         JOIN token tk2 on fp.stake_token_id = tk2.id
         GROUP BY fs.farm_params_id
+        ORDER BY fp.pool_id ASC
         """
     )
     results = []

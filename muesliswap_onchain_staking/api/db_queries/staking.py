@@ -19,6 +19,7 @@ def query_staking_positions_per_wallet(
         JOIN stakingcumulativepoolrptsatstart scprs ON scprs.staking_params_id = sp.id
         JOIN stakingstate ss ON ss.staking_params_id = sp.id
         WHERE a.address_raw = ?
+        ORDER BY sp.staked_since ASC, sp.batching_output_index ASC
         """,
         (wallet,),
     )
