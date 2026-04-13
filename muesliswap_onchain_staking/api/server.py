@@ -79,6 +79,17 @@ def add_jsoncontenttype(response: Response):
     response.headers["Content-Type"] = f"application/json"
 
 
+HEX_RE = r"^[0-9a-fA-F]+$"
+HEX_56_RE = r"^[0-9a-fA-F]{56}$"
+HEX_64_RE = r"^[0-9a-fA-F]{64}$"
+PUBKEY_HASHES_RE = r"^[0-9a-fA-F]{56}(?:,[0-9a-fA-F]{56})*$"
+TOKEN_RE = r"^(\.|[0-9a-fA-F]{56}\.[0-9a-fA-F]*)$"
+AS_BASE_RE = r"^(from|to)$"
+BOOLISH_RE = r"^(true|false|1|0)$"
+PROVIDER_RE = r"^(muesliswap|minswap|vyfi)$"
+PROPOSAL_TYPE_RE = r"^(any|[A-Za-z]+(?:,[A-Za-z]+)*)$"
+
+
 #################################################################################################
 #                                            Endpoints                                          #
 #################################################################################################
@@ -86,42 +97,42 @@ def add_jsoncontenttype(response: Response):
 PolicyIdQuery = DashingQuery(
     description="Policy ID of a token",
     examples=["", "afbe91c0b44b3040e360057bf8354ead8c49c4979ae6ab7c4fbdc9eb"],
-    # TODO add validation
+    pattern=HEX_56_RE,
 )
 TokenNameQuery = DashingQuery(
     description="Hex encoded name of a token",
     examples=["", "4d494c4b7632"],
-    # TODO add validation
+    pattern=HEX_RE,
 )
 AsBaseQuery = DashingQuery(
     description="Token that should be used as base",
     examples=["from", "to"],
-    # TODO add validation
+    pattern=AS_BASE_RE,
 )
 IncludeTradesQuery = DashingQuery(
     description="Whether or not to include the last trades data",
     examples=["true", "false"],
-    # TODO add validation
+    pattern=BOOLISH_RE,
 )
 IncludeAdaPricesQuery = DashingQuery(
     description="Whether or not to include the ada price data",
     examples=["true", "false"],
-    # TODO add validation
+    pattern=BOOLISH_RE,
 )
 VerifiedQuery = DashingQuery(
     description="Filter for only verified tokens",
     examples=["true", "false", "1", "0"],
-    # TODO add validation
+    pattern=BOOLISH_RE,
 )
 PubkeyHashQuery = DashingQuery(
     description="Pubkeyhash of a wallet",
     examples=["dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f"],
-    # TODO add validation
+    pattern=HEX_56_RE,
 )
 StakekeyHashQuery = DashingQuery(
     description="Stake key hash of a wallet",
     examples=["dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f"],
-    # TODO add validation
+    pattern=HEX_56_RE,
 )
 PubkeyHashesQuery = DashingQuery(
     description="Stake key hash of a wallet",
@@ -129,26 +140,27 @@ PubkeyHashesQuery = DashingQuery(
         "",
         "dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f,dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f",
     ],
-    # TODO add validation
+    pattern=PUBKEY_HASHES_RE,
 )
 WalletQuery = DashingQuery(
     description="Wallet address in hex",
     examples=[
         "01dcbc64ce3cc4aeac225a45dd67dfc3717f732f6303556efb6dd8024f0420b0d045f11e8a66319f9d19ffcba35aa9fee0164014776a1f7c95"
     ],
-    # TODO add validation
+    min_length=2,
+    pattern=HEX_RE,
 )
 AddressQuery = DashingQuery(
     description="Wallet address in bech32",
     examples=[
         "addr1q8wtcexw8nz2atpztfza6e7lcdch7ue0vvp42mhmdhvqyncyyzcdq303r69xvvvln5vlljart25lacqkgq28w6sl0j2skvlxf4"
     ],
-    # TODO add validation
+    pattern=r"^(addr|addr_test)1[0-9a-z]+$",
 )
 ProviderQuery = DashingQuery(
     description="Provider name",
     examples=["muesliswap", "minswap", "vyfi"],
-    # TODO add validation
+    pattern=PROVIDER_RE,
 )
 TokenQuery = DashingQuery(
     description="Toke name in hex",
@@ -156,7 +168,7 @@ TokenQuery = DashingQuery(
         ".",
         "afbe91c0b44b3040e360057bf8354ead8c49c4979ae6ab7c4fbdc9eb.4d494c4b7632",
     ],
-    # TODO add validation
+    pattern=TOKEN_RE,
 )
 AssetIdentifierQuery = DashingQuery(
     description="Asset identifier in hex: Concatenation of the policy_id and hex-encoded asset_name",
@@ -164,23 +176,24 @@ AssetIdentifierQuery = DashingQuery(
         "",
         "afbe91c0b44b3040e360057bf8354ead8c49c4979ae6ab7c4fbdc9eb4d494c4b7632",
     ],
-    # TODO add validation
+    min_length=56,
+    pattern=HEX_RE,
 )
 TransactionHashQuery = DashingQuery(
     description="Transaction hash",
     examples=["6804edf9712d2b619edb6ac86861fe93a730693183a262b165fcc1ba1bc99cad"],
-    # TODO add validation
+    pattern=HEX_64_RE,
 )
 TransactionIdQuery = DashingQuery(
     description="Transaction id",
     examples=[0, 1, 2],
-    # TODO add validation
+    ge=0,
 )
 ProposalTypeQuery = DashingQuery(
     description="Proposal types (e.g. Opinion, Reject, GovStateUpdate, FundPayout, LicenseRelease, PoolUpgrade) that must be contained, separated through ','",
     examples=[["any"], ["FundPayout"], ["LicenseRelease", "PoolUpgrade"]],
     default="any",
-    # TODO add validation
+    pattern=PROPOSAL_TYPE_RE,
 )
 
 
