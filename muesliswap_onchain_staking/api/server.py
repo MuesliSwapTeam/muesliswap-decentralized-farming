@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -76,6 +77,17 @@ def add_jsoncontenttype(response: Response):
     # see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
     # and https://fastapi.tiangolo.com/advanced/response-headers/
     response.headers["Content-Type"] = f"application/json"
+
+
+def decode_token_name(token_name_hex: str) -> str | None:
+    if token_name_hex == "":
+        return ""
+    try:
+        return bytes.fromhex(token_name_hex).decode("utf-8")
+    except ValueError:
+        return None
+    except UnicodeDecodeError:
+        return None
 
 
 HEX_RE = r"^[0-9a-fA-F]+$"
@@ -216,11 +228,24 @@ def health():
 
 
 @app.get("/api/v1/farms")
-def farms():
+def farms(include_decoded_names: bool = Query(default=False)):
     """
     Get all farms.
     """
-    return ORJSONResponse(query_farms())
+    farms_data = query_farms()
+    if not include_decoded_names:
+        return ORJSONResponse(farms_data)
+
+    farms_data_with_decoded_names = deepcopy(farms_data)
+    for farm in farms_data_with_decoded_names:
+        farm["stake_token"]["decoded_asset_name"] = decode_token_name(
+            farm["stake_token"]["asset_name"]
+        )
+        for reward_token in farm["reward_tokens"]:
+            reward_token["decoded_asset_name"] = decode_token_name(
+                reward_token["asset_name"]
+            )
+    return ORJSONResponse(farms_data_with_decoded_names)
 
 
 @app.get("/api/v1/staking/positions")
