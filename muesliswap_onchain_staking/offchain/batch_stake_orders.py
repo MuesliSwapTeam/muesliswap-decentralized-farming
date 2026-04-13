@@ -42,10 +42,15 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    assert (
-        len(batching_utxos) == 1
-    ), "Batching of multiple orders is not supported (yet)."
+    if len(batching_utxos) != 1:
+        raise ValueError(
+            f"Batching of multiple orders is not supported yet: expected 1 order UTxO, found {len(batching_utxos)}."
+        )
     staking_utxos = context.utxos(staking_address)
+    if len(staking_utxos) != 1:
+        raise ValueError(
+            f"Expected exactly one staking farm UTxO, found {len(staking_utxos)}."
+        )
 
     staking_input = staking_utxos[0]
     prev_farm_datum = staking.FarmState.from_cbor(staking_input.output.datum.cbor)

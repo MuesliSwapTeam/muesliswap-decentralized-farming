@@ -36,11 +36,17 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     staking_utxos = context.utxos(staking_address)
+    farm_input = None
     for u in staking_utxos:
         if u.output.amount.multi_asset.get(farm_nft_script_hash):
             farm_input = u
             break
-    assert farm_input, "No farm found."
+    if farm_input is None:
+        raise ValueError("No farm UTxO found in staking script address.")
+    if len(staking_utxos) != 2:
+        raise ValueError(
+            f"Expected two staking UTxOs (farm and staking position), found {len(staking_utxos)}."
+        )
 
     staking_input = staking_utxos[0 if farm_input == staking_utxos[1] else 1]
 

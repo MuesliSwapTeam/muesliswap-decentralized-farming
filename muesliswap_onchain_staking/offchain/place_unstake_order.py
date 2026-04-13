@@ -46,11 +46,13 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     staking_utxos = context.utxos(staking_address)
+    staking_position_input = None
     for u in staking_utxos:
         if not u.output.amount.multi_asset.get(farm_nft_script_hash):
             staking_position_input = u
             break
-    assert staking_position_input, "No staking position found."
+    if staking_position_input is None:
+        raise ValueError("No staking position found in staking script UTxOs.")
 
     unstake_order_datum = batching.UnstakeOrder(
         owner=to_address(payment_address),

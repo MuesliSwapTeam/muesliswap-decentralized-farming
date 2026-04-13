@@ -39,19 +39,23 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    assert (
-        len(batching_utxos) == 1
-    ), "Batching of multiple orders is not supported (yet)."
+    if len(batching_utxos) != 1:
+        raise ValueError(
+            f"Batching of multiple orders is not supported yet: expected 1 order UTxO, found {len(batching_utxos)}."
+        )
 
     staking_utxos = context.utxos(staking_address)
+    farm_input = None
     for u in staking_utxos:
         if u.output.amount.multi_asset.get(farm_nft_script_hash):
             farm_input = u
             break
-    assert farm_input, "No farm found."
-    assert (
-        len(staking_utxos) == 2
-    ), "Expected two staking UTxOs (one farm, one position)."
+    if farm_input is None:
+        raise ValueError("No farm UTxO found in staking script address.")
+    if len(staking_utxos) != 2:
+        raise ValueError(
+            f"Expected two staking UTxOs (one farm, one position), found {len(staking_utxos)}."
+        )
 
     staking_input = staking_utxos[0 if farm_input == staking_utxos[1] else 1]
 
