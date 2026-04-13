@@ -19,11 +19,25 @@ def main(name):
     testnet_addr_path = keys_dir.joinpath(f"{name}.test_addr")
 
     if skey_path.exists():
-        raise FileExistsError(f"signing key file ${skey_path} already exists")
+        raise FileExistsError(
+            f"Signing key file already exists: {skey_path}. "
+            f"Choose a different name or remove the existing file first."
+        )
     if vkey_path.exists():
-        raise FileExistsError(f"verification key file ${vkey_path} already exists")
+        raise FileExistsError(
+            f"Verification key file already exists: {vkey_path}. "
+            f"Choose a different name or remove the existing file first."
+        )
     if addr_path.exists():
-        raise FileExistsError(f"address file ${addr_path} already exists")
+        raise FileExistsError(
+            f"Mainnet address file already exists: {addr_path}. "
+            f"Choose a different name or remove the existing file first."
+        )
+    if testnet_addr_path.exists():
+        raise FileExistsError(
+            f"Testnet address file already exists: {testnet_addr_path}. "
+            f"Choose a different name or remove the existing file first."
+        )
 
     signing_key = PaymentSigningKey.generate()
     signing_key.save(str(skey_path))
