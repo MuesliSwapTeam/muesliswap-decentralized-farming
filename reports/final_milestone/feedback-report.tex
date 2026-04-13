@@ -1,0 +1,94 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{datetime}
+\usepackage{enumitem}
+
+\newcommand{\ProjectName}{Decentralized Farming Contracts}
+\newcommand{\ReportVersion}{v1.0}
+\newcommand{\ReportDate}{\today}
+
+\definecolor{daoblue}{HTML}{0077B5}
+\definecolor{lightgray}{gray}{0.95}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=daoblue,
+  urlcolor=daoblue,
+  citecolor=daoblue
+}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=2pt}
+
+\newcommand{\feedbackentry}[4]{%
+\par\vspace{18pt}
+{\large\bfseries Feedback \##1}\par \vspace{8pt}
+{\large\bfseries Title: #2}\par
+\vspace{14pt}
+
+{\large\bfseries Explanation}\par
+{\setlength{\fboxsep}{12pt}%
+\setlength{\fboxrule}{0.6pt}%
+\fcolorbox{white}{lightgray}{\parbox{0.98\linewidth}{\vspace{4pt}#3\par\vspace{4pt}}}%
+}\par
+\vspace{8pt}
+{\large\bfseries Commit:}\ \ #4\par
+\vspace{12pt}
+\hrule height 0.8pt
+\vspace{18pt}
+}
+
+\begin{document}
+\begin{center}
+  {\LARGE \textbf{Anonymized User Feedback Report}}\\[6pt]
+  {\large \ProjectName}\\[3pt]
+  Report Version: \ReportVersion\\
+\end{center}
+\vspace{10pt}
+\hrule
+\vspace{10cm}
+
+\section*{What this report is}
+This document summarizes anonymized user feedback collected during community testing of the Decentralized Farming Contracts. Each entry represents one piece of feedback. We rewrote all comments for clarity and removed personal details.
+
+\section*{How to read this report}
+Each feedback includes:
+\begin{itemize}
+  \item \textbf{Feedback Number:} Feedback ID (e.g., F001)
+  \item \textbf{Title:} Short description of the feedback item
+  \item \textbf{Explanation:} Brief summary of the issue and fix
+  \item \textbf{Commit:} Link to the implementation commit
+\end{itemize}
+
+\section*{Purpose}
+The purpose is to record user impressions, detect usability issues, and gather ideas for future improvements.
+
+\vspace{2em}
+\hline
+\vspace{2em}
+\newpage
+
+\feedbackentry{F001}{Add basic API input validation}{Some query parameters were accepted without format checks, which could lead to unclear failures later in request handling. Added simple validation constraints for common parameters in the API layer so malformed requests fail early with clear HTTP validation errors.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/d8b8390}{d8b8390}}
+
+\feedbackentry{F002}{Fix API wording and typos}{Several API descriptions had small typos and inconsistent wording, which made the OpenAPI docs look rough. Cleaned up descriptions and metadata text in the server file.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/6449480}{6449480}}
+
+\feedbackentry{F003}{Return clearer empty response for staking positions}{When a wallet had no positions, the response format was not explicit enough for UI handling. Updated the endpoint to return a consistent payload with \texttt{items}, \texttt{count}, and an empty-state message when there are no positions.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/ed4af46}{ed4af46}}
+
+\feedbackentry{F004}{Make API list ordering deterministic}{Result order for farms and staking positions was not explicitly defined, so client displays could appear inconsistent between calls. Added SQL \texttt{ORDER BY} clauses for stable ordering.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/8738912}{8738912}}
+
+\feedbackentry{F005}{Optional decoded token names in farms API}{Token names are stored as hex and are not always easy to read during integration work. Added an optional query flag that includes decoded token names in the farms response while keeping default output unchanged.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/3b18da9}{3b18da9}}
+
+\feedbackentry{F006}{Improve offchain script guard errors}{Several offchain scripts used brittle assertions, which could crash with less helpful feedback when assumptions were not met. Replaced these with explicit checks and clearer user-facing error messages across affected scripts.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/f44672e}{f44672e}}
+
+\feedbackentry{F007}{Improve key generation file-exists errors}{The key generation script had unclear file-exists messages and a small formatting typo. Updated messages to be more direct, fixed the typo, and added a missing pre-check for the testnet address output file.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/1f8f5c4}{1f8f5c4}}
+
+\feedbackentry{F008}{Apply consistent cache-control headers}{Existing header helper functions were not used consistently on all current read endpoints. Added cache-control and JSON content-type handling to health, farms, and staking-positions endpoints.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/ab97349}{ab97349}}
+
+\feedbackentry{F009}{Add README quickstart commands}{Project onboarding was missing a short command list for common local tasks. Added a compact quickstart section in the root README with install, API run, key creation, farm creation, and stake order commands.}{\href{https://github.com/MuesliSwapTeam/muesliswap-decentralized-farming/commit/9f3d90e}{9f3d90e}}
+
+\end{document}
