@@ -22,6 +22,14 @@ NEXT_BLOCK = TEMPLATE.copy()
 NEXT_BLOCK["method"] = "nextBlock"
 NEXT_BLOCK = json.dumps(NEXT_BLOCK)
 
+UNSUPPORTED_GOVERNANCE_KEYS = {
+    "proposals",
+    "votingProcedures",
+    "votes",
+    "treasury",
+    "donation",
+}
+
 
 @dataclass
 class Point:
@@ -120,12 +128,16 @@ def txs_from_block(block: dict) -> list[FixedTxHashTransaction]:
                 f"Error parsing transactions in block: {e}, make sure that --include-cbor is set as flag when running ogmios"
             ) from e
         except pycardano.DeserializeException as e:
-            if "pycardano.certificate" in str(e):
+            # We only skip transactions that clearly use known features unsupported by the
+            # current pycardano version. Unknown deserialize errors still fail fast.
+            unsupported_reason = _known_unsupported_reason(tx, str(e))
+            if unsupported_reason is not None:
                 _LOGGER.info(
-                    "Ignoring transaction with a certificate that is not supported by pycardano"
+                    "Skipping unsupported transaction id=%s reason=%s",
+                    tx.get("id", "<unknown>"),
+                    unsupported_reason,
                 )
                 continue
-            print(tx)
             raise ValueError(f"Error parsing transactions in block: {e}") from e
         except ValueError as e:
             if "2 is not a valid Network" in str(e):
@@ -133,9 +145,30 @@ def txs_from_block(block: dict) -> list[FixedTxHashTransaction]:
                     "Ignoring transaction with Byron address, not supported by pycardano"
                 )
                 continue
-            print(tx)
             raise ValueError(f"Error parsing transactions in block: {e}") from e
         except Exception as e:
-            print(tx)
             raise ValueError(f"Error parsing transactions in block: {e}") from e
     return txs_transformed
+
+
+def _known_unsupported_reason(tx: dict, error_text: str) -> str | None:
+    """
+    Returns a reason only for transaction patterns we explicitly know are unsupported.
+    Unknown parse failures return None so they still fail fast.
+    """
+    tx_keys = set(tx.keys())
+
+    if "pycardano.certificate" in error_text:
+        return "certificate type unsupported by current pycardano"
+
+    if "pycardano.governance." in error_text:
+        return "governance object unsupported by current pycardano"
+
+    unknown_keys = tx_keys.intersection(UNSUPPORTED_GOVERNANCE_KEYS)
+    if unknown_keys:
+        return (
+            "contains governance/proposal fields unsupported by current parser: "
+            + ",".join(sorted(unknown_keys))
+        )
+
+    return None

@@ -3,29 +3,38 @@ from ..db_models import sqlite_db
 def query_farms():
     cursor = sqlite_db.execute_sql(
         """
+        WITH latest_farmparams AS (
+            SELECT
+                fp.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY fp.pool_id
+                    ORDER BY fp.last_update_time DESC
+                ) AS rn
+            FROM farmparams fp
+        )
         SELECT
-        fp.pool_id,
-        tk2.policy_id as stake_token_policy_id,
-        tk2.asset_name as stake_token_asset_name,
-        fp.farm_type,
-        fp.last_update_time,
-        fp.amount_staked,
-        group_concat(tk.policy_id, ';') as reward_token_policy_id,
-        group_concat(tk.asset_name, ';') as reward_token_asset_name,
-        group_concat(frt.idx, ';') as reward_token_index,
-        group_concat(fer.emission_rate, ';'),
-        group_concat(fer.idx, ';'),
-        group_concat(fcrpt.cumulative_reward_per_token_numerator, ';'),
-        group_concat(fcrpt.cumulative_reward_per_token_denominator, ';'),
-        group_concat(fcrpt.idx, ';')
-        FROM
-        farmstate fs
-        JOIN farmparams fp ON fs.farm_params_id = fp.id
+            fp.pool_id,
+            tk2.policy_id AS stake_token_policy_id,
+            tk2.asset_name AS stake_token_asset_name,
+            fp.farm_type,
+            fp.last_update_time,
+            fp.amount_staked,
+            group_concat(tk.policy_id, ';') AS reward_token_policy_id,
+            group_concat(tk.asset_name, ';') AS reward_token_asset_name,
+            group_concat(frt.idx, ';') AS reward_token_index,
+            group_concat(fer.emission_rate, ';'),
+            group_concat(fer.idx, ';'),
+            group_concat(fcrpt.cumulative_reward_per_token_numerator, ';'),
+            group_concat(fcrpt.cumulative_reward_per_token_denominator, ';'),
+            group_concat(fcrpt.idx, ';')
+        FROM latest_farmparams fp
+        JOIN farmstate fs ON fs.farm_params_id = fp.id
         JOIN farmrewardtoken frt ON frt.farm_params_id = fp.id
-        JOIN token tk on frt.token_id = tk.id
+        JOIN token tk ON frt.token_id = tk.id
         JOIN farmemissionrate fer ON fer.farm_params_id = fp.id
         JOIN farmcumulativerewardpertoken fcrpt ON fcrpt.farm_params_id = fp.id
-        JOIN token tk2 on fp.stake_token_id = tk2.id
+        JOIN token tk2 ON fp.stake_token_id = tk2.id
+        WHERE fp.rn = 1
         GROUP BY fs.farm_params_id
         ORDER BY fp.pool_id ASC
         """
@@ -79,3 +88,35 @@ def query_farms():
             }
         )
     return results
+
+
+def query_farm_stake_token(pool_id: str):
+    cursor = sqlite_db.execute_sql(
+        """
+        WITH latest_farmparams AS (
+            SELECT
+                fp.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY fp.pool_id
+                    ORDER BY fp.last_update_time DESC
+                ) AS rn
+            FROM farmparams fp
+            WHERE fp.pool_id = ?
+        )
+        SELECT
+            tk.policy_id,
+            tk.asset_name
+        FROM latest_farmparams fp
+        JOIN token tk ON fp.stake_token_id = tk.id
+        WHERE fp.rn = 1
+        LIMIT 1
+        """,
+        (pool_id,),
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return {
+        "policy_id": row[0],
+        "asset_name": row[1],
+    }

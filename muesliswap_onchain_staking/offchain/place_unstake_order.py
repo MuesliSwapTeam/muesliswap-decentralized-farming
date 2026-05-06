@@ -91,7 +91,7 @@ def main(
     )
 
     builder.add_output(with_min_lovelace(stake_order_output, context))
-    builder.ttl = context.last_block_slot + 100
+    builder.ttl = context.last_block_slot + 179
     builder.mint = permission_nft_asset
     builder.add_minting_script(
         unstake_permission_nft_script, Redeemer(permission_nft_redeemer)

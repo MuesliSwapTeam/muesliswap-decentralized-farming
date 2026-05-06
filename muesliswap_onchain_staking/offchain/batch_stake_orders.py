@@ -1,17 +1,17 @@
 import fire
 from datetime import datetime
 
-from muesliswap_onchain_staking.onchain import batching, staking
-from muesliswap_onchain_staking.utils.network import show_tx, context
+from muesliswap_onchain_staking.onchain import batching, staking, farm_nft
+from muesliswap_onchain_staking.utils.network import show_tx
 from muesliswap_onchain_staking.utils import get_signing_info, network
-from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.utils.contracts import get_contract, module_name, get_ref_utxo
+from muesliswap_onchain_staking.secret import BLOCKFROST_PROJECT_ID
 from muesliswap_onchain_staking.offchain.util import (
     with_min_lovelace,
     sorted_utxos,
     amount_of_token_in_value,
     adjust_for_wrong_fee,
     asset_from_script_hash,
-    asset_from_token,
 )
 from muesliswap_onchain_staking.onchain.util import STAKE_NFT_NAME
 from pycardano import (
@@ -22,11 +22,19 @@ from pycardano import (
     TransactionOutput,
     Redeemer,
     Value,
+    Network,
+)
+from pycardano.backend.blockfrost import BlockFrostChainContext
+
+
+context = BlockFrostChainContext(
+    project_id=BLOCKFROST_PROJECT_ID,
+    network=Network.TESTNET,
 )
 
 
 def main(
-    wallet: str = "batcher",
+    wallet: str = "staker",
 ):
     batching_script, _, batching_address = get_contract(
         module_name(batching), compressed=True
@@ -34,6 +42,10 @@ def main(
     staking_script, _, staking_address = get_contract(
         module_name(staking), compressed=True
     )
+    _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
+    staking_script_ref_utxo = get_ref_utxo(staking_script, context)
+    batching_script_ref_utxo = get_ref_utxo(batching_script, context)
+
     _, staking_policy_id, staking_address = get_contract(
         module_name(staking), compressed=True
     )
@@ -42,39 +54,64 @@ def main(
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    if len(batching_utxos) != 1:
-        raise ValueError(
-            f"Batching of multiple orders is not supported yet: expected 1 order UTxO, found {len(batching_utxos)}."
-        )
+    stake_order_candidates = []
+    for u in sorted_utxos(batching_utxos):
+        if not u.output.datum:
+            continue
+        try:
+            stake_order_candidates.append((batching.StakeOrder.from_cbor(u.output.datum.cbor), u))
+        except Exception:
+            # Batching address contains mixed order types; only process StakeOrder here.
+            continue
+    if not stake_order_candidates:
+        print("No pending stake orders to batch.")
+        return
+
     staking_utxos = context.utxos(staking_address)
-    if len(staking_utxos) != 1:
-        raise ValueError(
-            f"Expected exactly one staking farm UTxO, found {len(staking_utxos)}."
+    farm_utxos = []
+    for u in staking_utxos:
+        if u.output.amount.multi_asset.get(farm_nft_script_hash):
+            farm_utxos.append(u)
+    if not farm_utxos:
+        raise ValueError("No farm UTxO found in staking script address.")
+
+    selected_order = None
+    staking_input = None
+    prev_farm_datum = None
+    for farm_utxo in farm_utxos:
+        try:
+            farm_datum = staking.FarmState.from_cbor(farm_utxo.output.datum.cbor)
+        except Exception:
+            continue
+        for order_datum, order_utxo in stake_order_candidates:
+            if order_datum.pool_id == farm_datum.params.pool_id:
+                selected_order = (order_datum, order_utxo)
+                staking_input = farm_utxo
+                prev_farm_datum = farm_datum
+                break
+        if selected_order is not None:
+            break
+    if selected_order is None or staking_input is None or prev_farm_datum is None:
+        print("No pending stake order matched any available farm.")
+        return
+
+    tx_inputs = sorted_utxos([selected_order[1], staking_input] + payment_utxos)
+    order_inputs = [
+        (
+            tx_inputs.index(selected_order[1]),
+            selected_order[0],
+            selected_order[1],
         )
-
-    staking_input = staking_utxos[0]
-    prev_farm_datum = staking.FarmState.from_cbor(staking_input.output.datum.cbor)
-
-    tx_inputs = sorted_utxos(batching_utxos + [staking_input] + payment_utxos)
-    order_inputs = sorted(
-        [
-            (
-                tx_inputs.index(u),
-                batching.StakeOrder.from_cbor(u.output.datum.cbor),
-                u,
-            )
-            for u in batching_utxos
-        ]
-    )
+    ]
 
     farm_input_index = tx_inputs.index(staking_input)
-    current_time = int(datetime.now().timestamp() * 1000)
+    current_time = int(datetime.now().timestamp() * 1000) + 2 * 60_000
     total_amount_of_new_stake = sum(
         [
             amount_of_token_in_value(
                 prev_farm_datum.params.stake_token, u.output.amount
             )
-            for u in batching_utxos
+            for u in [selected_order[1]]
         ]
     )
 
@@ -155,22 +192,26 @@ def main(
     builder.add_output(with_min_lovelace(farm_output, context))
     for o in staking_position_outputs:
         builder.add_output(with_min_lovelace(o, context))
-    # balance output (somehow pycardano doesn't...?)
-    builder.add_output(
-        with_min_lovelace(
-            TransactionOutput(
-                address=payment_address,
-                amount=Value(
-                    multi_asset=asset_from_token(
-                        prev_farm_datum.params.stake_token, 510_000
-                    )
-                ),
-            ),
-            context,
-        )
+    payment_asset_change = sum(
+        (
+            Value(multi_asset=u.output.amount.multi_asset)
+            for u in payment_utxos
+            if u.output.amount.multi_asset
+        ),
+        Value(),
     )
-    builder.validity_start = context.last_block_slot - 50
-    builder.ttl = context.last_block_slot + 100
+    if payment_asset_change.multi_asset:
+        builder.add_output(
+            with_min_lovelace(
+                TransactionOutput(
+                    address=payment_address,
+                    amount=payment_asset_change,
+                ),
+                context,
+            )
+        )
+    builder.validity_start = context.last_block_slot
+    builder.ttl = context.last_block_slot + 179
     builder.mint = asset_from_script_hash(staking_policy_id, STAKE_NFT_NAME, 1)
     # - add inputs
     for u in payment_utxos:
@@ -178,19 +219,19 @@ def main(
     # - add script inputs
     builder.add_script_input(
         staking_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         farm_apply_redeemer,
     )
     for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
             o[2],
-            batching_script,
+            batching_script_ref_utxo or batching_script,
             None,
             r,
         )
     builder.add_minting_script(
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         Redeemer(
             staking.MintApplyOrder(
                 farm_input_index=farm_input_index,
@@ -208,7 +249,7 @@ def main(
     # submit the transaction
     context.submit_tx(
         adjust_for_wrong_fee(
-            signed_tx, [payment_skey], fee_offset=150, output_offset=12_930
+            signed_tx, [payment_skey], fee_offset=0, output_offset=68_960
         )
     )
 

@@ -27,13 +27,13 @@ from opshin.std.fractions import Fraction
 
 
 def main(
-    wallet: str = "creator",
+    wallet: str = "staker",
     stake_token: Token = token_from_string(
-        "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+        "1a92837ebb35de4be6afaa1da8084df613c69a983ddefc93fce54b1e.6d7565736c69"
     ),
     reward_tokens: List[Token] = [
         token_from_string(
-            "672ae1e79585ad1543ef6b4b6c8989a17adcea3040f77ede128d9217.6d7565736c69"
+            "1a92837ebb35de4be6afaa1da8084df613c69a983ddefc93fce54b1e.6d7565736c69"
         )
     ],
     emission_rates: List[int] = [42_000],
@@ -87,6 +87,12 @@ def main(
     )
 
     builder.add_output(with_min_lovelace(farm_output, context))
+
+    builder.add_output(with_min_lovelace(TransactionOutput(
+        address=payment_address,
+        amount=Value(multi_asset=asset_from_token(stake_token, 999_900))
+    ), context))
+
     builder.mint = asset_from_token(farm_nft_token, 1)
     builder.ttl = context.last_block_slot + 100
 

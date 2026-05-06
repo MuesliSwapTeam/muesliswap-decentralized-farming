@@ -3,7 +3,7 @@ import os
 import blockfrost
 import pycardano
 from pycardano import Network
-from pycardano.backend.ogmios_v6 import OgmiosV6ChainContext
+from pycardano import OgmiosChainContext
 
 ogmios_host = os.getenv("OGMIOS_API_HOST", "localhost")
 ogmios_port = os.getenv("OGMIOS_API_PORT", "1338")
@@ -32,7 +32,7 @@ blockfrost_client = blockfrost.BlockFrostApi(
 
 # Load chain context
 try:
-    context = OgmiosV6ChainContext(
+    context = OgmiosChainContext(
         host=ogmios_host,
         port=int(ogmios_port),
         secure=ogmios_protocol == "wss",

@@ -3,9 +3,10 @@ from datetime import datetime
 
 from muesliswap_onchain_staking.onchain import batching, staking, farm_nft
 from muesliswap_onchain_staking.onchain.util import floor_scale_fraction
-from muesliswap_onchain_staking.utils.network import show_tx, context
-from muesliswap_onchain_staking.utils import get_signing_info, network, from_address
-from muesliswap_onchain_staking.utils.contracts import get_contract, module_name
+from muesliswap_onchain_staking.utils.network import show_tx
+from muesliswap_onchain_staking.utils import get_signing_info, network, from_address, to_tx_out_ref
+from muesliswap_onchain_staking.utils.contracts import get_contract, module_name, get_ref_utxo
+from muesliswap_onchain_staking.secret import BLOCKFROST_PROJECT_ID
 from muesliswap_onchain_staking.offchain.util import (
     with_min_lovelace,
     sorted_utxos,
@@ -21,11 +22,19 @@ from pycardano import (
     TransactionOutput,
     Redeemer,
     Value,
+    Network,
+)
+from pycardano.backend.blockfrost import BlockFrostChainContext
+
+
+context = BlockFrostChainContext(
+    project_id=BLOCKFROST_PROJECT_ID,
+    network=Network.TESTNET,
 )
 
 
 def main(
-    wallet: str = "batcher",
+    wallet: str = "staker",
 ):
     batching_script, _, batching_address = get_contract(
         module_name(batching), compressed=True
@@ -35,14 +44,27 @@ def main(
     )
     _, farm_nft_script_hash, _ = get_contract(module_name(farm_nft), compressed=True)
 
+    batching_script_ref_utxo = get_ref_utxo(batching_script, context)
+    staking_script_ref_utxo = get_ref_utxo(staking_script, context)
+
     _, payment_skey, payment_address = get_signing_info(wallet, network=network)
     payment_utxos = context.utxos(payment_address)
 
     batching_utxos = context.utxos(batching_address)
-    if len(batching_utxos) != 1:
-        raise ValueError(
-            f"Batching of multiple orders is not supported yet: expected 1 order UTxO, found {len(batching_utxos)}."
-        )
+    unstake_order_candidates = []
+    for u in sorted_utxos(batching_utxos):
+        if not u.output.datum:
+            continue
+        try:
+            unstake_order_candidates.append(
+                (batching.UnstakeOrder.from_cbor(u.output.datum.cbor), u)
+            )
+        except Exception:
+            # Batching address contains mixed order types; only process UnstakeOrder here.
+            continue
+    if not unstake_order_candidates:
+        print("No pending unstake orders to batch.")
+        return
 
     staking_utxos = context.utxos(staking_address)
     farm_input = None
@@ -52,34 +74,45 @@ def main(
             break
     if farm_input is None:
         raise ValueError("No farm UTxO found in staking script address.")
-    if len(staking_utxos) != 2:
-        raise ValueError(
-            f"Expected two staking UTxOs (one farm, one position), found {len(staking_utxos)}."
-        )
-
-    staking_input = staking_utxos[0 if farm_input == staking_utxos[1] else 1]
 
     prev_farm_datum = staking.FarmState.from_cbor(farm_input.output.datum.cbor)
-    staking_position_datum = staking.StakingPosition.from_cbor(
-        staking_input.output.datum.cbor
-    )
+    selected_order = None
+    staking_input = None
+    staking_position_datum = None
+    for order_datum, order_utxo in unstake_order_candidates:
+        for candidate_staking_input in staking_utxos:
+            if candidate_staking_input == farm_input or not candidate_staking_input.output.datum:
+                continue
+            if order_datum.staking_position != to_tx_out_ref(candidate_staking_input.input):
+                continue
+            candidate_staking_datum = staking.StakingPosition.from_cbor(
+                candidate_staking_input.output.datum.cbor
+            )
+            if candidate_staking_datum.pool_id != prev_farm_datum.params.pool_id:
+                continue
+            selected_order = (order_datum, order_utxo)
+            staking_input = candidate_staking_input
+            staking_position_datum = candidate_staking_datum
+            break
+        if selected_order is not None:
+            break
+    if selected_order is None or staking_input is None or staking_position_datum is None:
+        print("No pending unstake order matched an available staking position.")
+        return
 
     tx_inputs = sorted_utxos(
-        batching_utxos + [staking_input, farm_input] + payment_utxos
+        [selected_order[1], staking_input, farm_input] + payment_utxos
     )
     staking_position_input_index = tx_inputs.index(staking_input)
     farm_input_index = tx_inputs.index(farm_input)
-    order_inputs = sorted(
-        [
-            (
-                tx_inputs.index(u),
-                batching.UnstakeOrder.from_cbor(u.output.datum.cbor),
-                u,
-            )
-            for u in batching_utxos
-        ]
-    )
-    current_time = int(datetime.now().timestamp() * 1000)
+    order_inputs = [
+        (
+            tx_inputs.index(selected_order[1]),
+            selected_order[0],
+            selected_order[1],
+        )
+    ]
+    current_time = int(datetime.now().timestamp() * 1000) + 2 * 60_000
 
     unlock_amount = amount_of_token_in_value(
         prev_farm_datum.params.stake_token, staking_input.output.amount
@@ -194,20 +227,20 @@ def main(
     # - add script inputs
     builder.add_script_input(
         farm_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         farm_unstake_redeemer,
     )
     builder.add_script_input(
         staking_input,
-        staking_script,
+        staking_script_ref_utxo or staking_script,
         None,
         staking_unstake_redeemer,
     )
     for o, r in zip(order_inputs, batching_apply_redeemers):
         builder.add_script_input(
             o[2],
-            batching_script,
+            batching_script_ref_utxo or batching_script,
             None,
             r,
         )
