@@ -3,6 +3,26 @@
 This repository contains the documentation and code for the implementation of the MuesliSwap Decentralized Farming project funded in Fund 12 by Project Catalyst [1]. Progress will be published here regularly throughout the project.
 
 
+## User Guide
+
+This project provides an API and helper scripts for decentralized farming actions like creating farms and placing stake orders.
+
+Main codebase parts:
+
+- `muesliswap_onchain_staking/api`: API endpoints and server startup.
+- `muesliswap_onchain_staking/offchain`: User-facing scripts that build and submit transactions.
+- `muesliswap_onchain_staking/onchain`: Smart contract logic that validates farming and staking rules.
+
+Typical user flow:
+
+1. Install dependencies and start the API server.
+2. Create a local key pair for test interactions.
+3. Create a farm (pool configuration and reward settings).
+4. Place a stake order into the selected farm.
+5. Repeat actions as needed to test or operate the farming flow.
+
+Use the commands in the next section for each step.
+
 ## Quickstart Commands
 
 Install dependencies:
@@ -34,6 +54,16 @@ Place a stake order:
 ```bash
 poetry run python -m muesliswap_onchain_staking.offchain.place_stake_order
 ```
+
+## Developer Setup Guide
+
+Use this setup for local development and testing.
+
+1. Install Python and Poetry.
+2. Run `poetry install` to install all project dependencies.
+3. Start the API server with reload mode for fast development.
+4. Use the provided offchain scripts to test farm creation and staking flows.
+5. Keep changes small and run the same commands after updates to verify behavior.
 
 ## Structure and Ideas behind SCs
 
